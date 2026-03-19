@@ -1,0 +1,2561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Virendra — Performance Marketing Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:       #080d18;
+    --surface:  #0f1623;
+    --card:     #141e2e;
+    --card2:    #1a2540;
+    --border:   #1f2d45;
+    --accent:   #f5a623;
+    --accent2:  #ff6b35;
+    --green:    #10d98a;
+    --red:      #ff4560;
+    --blue:     #4e9fff;
+    --purple:   #a78bfa;
+    --text:     #e8edf5;
+    --muted:    #4a5a72;
+    --muted2:   #2a3a52;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Sans', sans-serif; overflow:hidden; }
+
+  /* LAYOUT */
+  .shell { display:flex; height:100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width:220px; min-width:220px; background:var(--surface);
+    border-right:1px solid var(--border);
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  .logo {
+    padding:22px 20px 18px;
+    border-bottom:1px solid var(--border);
+  }
+  .logo-name {
+    font-family:'Bebas Neue'; font-size:26px; letter-spacing:2px;
+    color:var(--accent); line-height:1;
+  }
+  .logo-sub { font-size:10px; color:var(--muted); letter-spacing:3px; text-transform:uppercase; margin-top:3px; }
+  .nav { padding:16px 0; flex:1; overflow-y:auto; }
+  .nav-section { padding:8px 20px 4px; font-size:9px; letter-spacing:3px; color:var(--muted); text-transform:uppercase; }
+  .nav-item {
+    display:flex; align-items:center; gap:10px;
+    padding:9px 20px; cursor:pointer; font-size:13px; font-weight:500;
+    color:var(--muted); transition:all .2s; border-left:3px solid transparent;
+    letter-spacing:.3px;
+  }
+  .nav-item:hover { color:var(--text); background:var(--card); }
+  .nav-item.active { color:var(--accent); background:rgba(245,166,35,.07); border-left-color:var(--accent); }
+  .nav-item .icon { font-size:16px; width:18px; text-align:center; }
+  .nav-badge {
+    margin-left:auto; background:var(--red); color:#fff;
+    font-size:9px; padding:2px 6px; border-radius:10px; font-weight:700;
+  }
+  .sidebar-footer {
+    padding:16px 20px; border-top:1px solid var(--border);
+    font-size:11px; color:var(--muted);
+  }
+  .sidebar-footer span { color:var(--green); }
+
+  /* MAIN */
+  .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+  /* TOPBAR */
+  .topbar {
+    padding:14px 28px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:16px; background:var(--surface);
+    flex-wrap:wrap;
+  }
+  .topbar-title { font-family:'Bebas Neue'; font-size:22px; letter-spacing:1.5px; color:var(--text); flex:1; min-width:160px; }
+  .topbar-title span { color:var(--accent); }
+  .filter-group { display:flex; align-items:center; gap:10px; }
+  .filter-label { font-size:11px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; }
+  .filter-select {
+    background:var(--card); border:1px solid var(--border);
+    color:var(--text); padding:6px 12px; border-radius:6px;
+    font-family:'DM Sans'; font-size:12px; cursor:pointer; outline:none;
+    appearance:none; padding-right:28px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a5a72' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 8px center;
+    transition:border-color .2s;
+  }
+  .filter-select:focus { border-color:var(--accent); }
+  .date-range {
+    display:flex; align-items:center; gap:6px;
+    background:var(--card); border:1px solid var(--border);
+    padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer;
+  }
+  .date-range:hover { border-color:var(--accent); }
+  .btn-refresh {
+    background:var(--accent); color:#000; border:none;
+    padding:7px 16px; border-radius:6px; font-size:12px; font-weight:700;
+    cursor:pointer; letter-spacing:.5px; transition:opacity .2s;
+  }
+  .btn-refresh:hover { opacity:.85; }
+  .live-dot { width:7px; height:7px; background:var(--green); border-radius:50%; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* CONTENT AREA */
+  .content { flex:1; display:flex; overflow:hidden; }
+
+  /* DASHBOARD PANEL */
+  .dashboard { flex:1; overflow-y:auto; padding:22px 28px; }
+
+  /* TABS */
+  .tabs { display:flex; gap:4px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:0; }
+  .tab {
+    padding:9px 18px; font-size:12px; font-weight:600; cursor:pointer;
+    color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px;
+    transition:all .2s; letter-spacing:.5px; text-transform:uppercase;
+  }
+  .tab:hover { color:var(--text); }
+  .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+  /* KPI CARDS */
+  .kpi-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px; margin-bottom:22px; }
+  .kpi-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:10px; padding:16px; position:relative; overflow:hidden;
+    transition:border-color .2s, transform .2s;
+  }
+  .kpi-card:hover { border-color:var(--accent); transform:translateY(-1px); }
+  .kpi-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  }
+  .kpi-card.accent::before { background:var(--accent); }
+  .kpi-card.green::before  { background:var(--green); }
+  .kpi-card.red::before    { background:var(--red); }
+  .kpi-card.blue::before   { background:var(--blue); }
+  .kpi-card.purple::before { background:var(--purple); }
+  .kpi-label { font-size:10px; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px; }
+  .kpi-value { font-family:'IBM Plex Mono'; font-size:22px; font-weight:600; line-height:1; }
+  .kpi-delta { font-size:11px; margin-top:6px; display:flex; align-items:center; gap:4px; }
+  .delta-up   { color:var(--green); }
+  .delta-down { color:var(--red); }
+  .kpi-sub { font-size:10px; color:var(--muted); margin-top:4px; }
+
+  /* GRID LAYOUTS */
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:20px; }
+  .grid-65 { display:grid; grid-template-columns:1.5fr 1fr; gap:16px; margin-bottom:20px; }
+
+  /* CHART CARD */
+  .chart-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:10px; padding:18px;
+  }
+  .chart-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .chart-title { font-size:13px; font-weight:600; letter-spacing:.3px; }
+  .chart-meta { font-size:11px; color:var(--muted); }
+  .chart-actions { display:flex; gap:8px; }
+  .chart-btn {
+    background:var(--card2); border:1px solid var(--border);
+    color:var(--muted); padding:4px 10px; border-radius:5px;
+    font-size:10px; cursor:pointer; transition:all .15s;
+  }
+  .chart-btn.active, .chart-btn:hover { color:var(--accent); border-color:var(--accent); }
+
+  /* TABLE */
+  .table-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:10px; overflow:hidden; margin-bottom:20px;
+  }
+  .table-head {
+    padding:14px 18px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .table-title { font-size:13px; font-weight:600; }
+  .search-input {
+    background:var(--card2); border:1px solid var(--border);
+    color:var(--text); padding:5px 10px; border-radius:5px;
+    font-size:11px; outline:none; width:160px;
+  }
+  .search-input:focus { border-color:var(--accent); }
+  table { width:100%; border-collapse:collapse; }
+  thead th {
+    padding:10px 14px; text-align:left; font-size:10px;
+    color:var(--muted); letter-spacing:1px; text-transform:uppercase;
+    border-bottom:1px solid var(--border); background:var(--card2);
+  }
+  tbody tr { border-bottom:1px solid var(--muted2); transition:background .15s; cursor:pointer; }
+  tbody tr:last-child { border-bottom:none; }
+  tbody tr:hover { background:rgba(245,166,35,.04); }
+  tbody td { padding:10px 14px; font-size:12px; }
+  td.mono { font-family:'IBM Plex Mono'; font-size:11px; }
+  .badge {
+    display:inline-block; padding:2px 8px; border-radius:4px;
+    font-size:10px; font-weight:700; letter-spacing:.5px;
+  }
+  .badge-green  { background:rgba(16,217,138,.15); color:var(--green); }
+  .badge-red    { background:rgba(255,69,96,.15); color:var(--red); }
+  .badge-yellow { background:rgba(245,166,35,.15); color:var(--accent); }
+  .badge-blue   { background:rgba(78,159,255,.15); color:var(--blue); }
+  .tag-loss { background:rgba(255,69,96,.2); color:var(--red); padding:1px 6px; border-radius:3px; font-size:9px; font-weight:700; margin-left:4px; }
+
+  /* FUNNEL */
+  .funnel-wrap { display:flex; align-items:flex-end; justify-content:space-around; gap:8px; padding:12px 0; }
+  .funnel-step { flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .funnel-bar-wrap { width:100%; display:flex; justify-content:center; }
+  .funnel-bar {
+    border-radius:6px 6px 0 0; transition:height .6s ease;
+    min-height:20px;
+  }
+  .funnel-label { font-size:10px; color:var(--muted); text-align:center; letter-spacing:.5px; }
+  .funnel-val { font-family:'IBM Plex Mono'; font-size:13px; font-weight:600; }
+  .funnel-pct { font-size:10px; color:var(--muted); }
+  .funnel-arrow { color:var(--muted); font-size:18px; margin-bottom:30px; }
+
+  /* AI AGENT PANEL */
+  .agent-panel {
+    width:360px; min-width:360px; background:var(--surface);
+    border-left:1px solid var(--border);
+    display:flex; flex-direction:column;
+  }
+  .agent-header {
+    padding:16px 20px; border-bottom:1px solid var(--border);
+    background:linear-gradient(135deg, #0f1623, #141e2e);
+  }
+  .agent-name {
+    font-family:'Bebas Neue'; font-size:20px; letter-spacing:1.5px; color:var(--accent);
+    display:flex; align-items:center; gap:8px;
+  }
+  .agent-avatar {
+    width:32px; height:32px; border-radius:50%;
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; flex-shrink:0;
+  }
+  .agent-bio { font-size:11px; color:var(--muted); margin-top:4px; line-height:1.5; }
+  .agent-tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .agent-tag {
+    font-size:9px; padding:2px 8px; border-radius:4px;
+    background:rgba(245,166,35,.12); color:var(--accent);
+    letter-spacing:.5px; text-transform:uppercase; font-weight:600;
+  }
+  .agent-messages {
+    flex:1; overflow-y:auto; padding:16px;
+    display:flex; flex-direction:column; gap:12px;
+    scrollbar-width:thin; scrollbar-color:var(--muted2) transparent;
+  }
+  .msg { display:flex; gap:8px; }
+  .msg.user { flex-direction:row-reverse; }
+  .msg-avatar {
+    width:28px; height:28px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:12px;
+  }
+  .msg-avatar.ai  { background:linear-gradient(135deg,var(--accent),var(--accent2)); }
+  .msg-avatar.usr { background:var(--card2); border:1px solid var(--border); }
+  .msg-bubble {
+    max-width:82%; padding:10px 13px; border-radius:10px;
+    font-size:12px; line-height:1.6;
+  }
+  .msg.ai   .msg-bubble { background:var(--card); border:1px solid var(--border); color:var(--text); border-radius:2px 10px 10px 10px; }
+  .msg.user .msg-bubble { background:rgba(245,166,35,.15); border:1px solid rgba(245,166,35,.3); color:var(--text); border-radius:10px 2px 10px 10px; }
+  .msg-time { font-size:9px; color:var(--muted); margin-top:4px; }
+  .msg-highlight { background:rgba(255,69,96,.12); border-left:2px solid var(--red); padding:6px 8px; border-radius:4px; margin-top:6px; font-size:11px; }
+  .msg-highlight.good { background:rgba(16,217,138,.08); border-left-color:var(--green); }
+  .typing { display:flex; gap:4px; padding:10px 14px; }
+  .typing span { width:6px; height:6px; background:var(--muted); border-radius:50%; animation:bounce .8s infinite; }
+  .typing span:nth-child(2) { animation-delay:.15s; }
+  .typing span:nth-child(3) { animation-delay:.3s; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+  .agent-input-area { padding:14px 16px; border-top:1px solid var(--border); }
+  .agent-input-wrap { display:flex; gap:8px; align-items:flex-end; }
+  .agent-textarea {
+    flex:1; background:var(--card); border:1px solid var(--border);
+    color:var(--text); padding:9px 12px; border-radius:8px;
+    font-family:'DM Sans'; font-size:12px; resize:none; outline:none;
+    max-height:100px; transition:border-color .2s;
+  }
+  .agent-textarea:focus { border-color:var(--accent); }
+  .agent-send {
+    background:var(--accent); color:#000; border:none;
+    width:36px; height:36px; border-radius:8px;
+    font-size:16px; cursor:pointer; flex-shrink:0;
+    transition:opacity .2s; display:flex; align-items:center; justify-content:center;
+  }
+  .agent-send:hover { opacity:.85; }
+  .agent-send:disabled { opacity:.4; cursor:not-allowed; }
+  .quick-asks { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .quick-ask {
+    background:var(--card); border:1px solid var(--border);
+    color:var(--muted); font-size:10px; padding:4px 9px; border-radius:4px;
+    cursor:pointer; transition:all .15s; white-space:nowrap;
+  }
+  .quick-ask:hover { color:var(--accent); border-color:var(--accent); }
+
+  /* SECTION TITLE */
+  .section-title { font-family:'Bebas Neue'; font-size:18px; letter-spacing:1px; margin-bottom:14px; color:var(--text); }
+  .section-title span { color:var(--accent); }
+
+  /* ALERT STRIP */
+  .alert-strip {
+    background:rgba(255,69,96,.08); border:1px solid rgba(255,69,96,.2);
+    border-radius:8px; padding:10px 14px; margin-bottom:16px;
+    display:flex; align-items:center; gap:10px; font-size:12px;
+  }
+  .alert-icon { font-size:16px; }
+  .alert-text { flex:1; }
+  .alert-text strong { color:var(--red); }
+
+  /* SCROLLBAR */
+  .dashboard::-webkit-scrollbar { width:4px; }
+  .dashboard::-webkit-scrollbar-track { background:transparent; }
+  .dashboard::-webkit-scrollbar-thumb { background:var(--muted2); border-radius:4px; }
+
+  /* HIDDEN TABS */
+  .tab-pane { display:none; }
+  .tab-pane.active { display:block; }
+
+  /* MINI SPARKLINE */
+  .spark-row { display:flex; align-items:center; gap:6px; font-size:10px; color:var(--muted); }
+  .spark-bar { height:4px; border-radius:2px; }
+
+  /* PLATFORM LOGO TAG */
+  .platform { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; }
+  .p-google { color:#4285F4; }
+  .p-meta   { color:#1877F2; }
+
+  .tab-content { animation:fadeIn .25s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+  /* RESPONSIVE */
+  @media (max-width:1200px) {
+    .agent-panel { display:none; }
+    .grid-2,.grid-3,.grid-65 { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<script>
+/* ══ VIRENDRA — Google Ads Live Callback (must be before JSONP script fires) ══ */
+var GOOGLE_ADS_LIVE_URL='https://script.google.com/macros/s/AKfycbxSNRnk5gQ-jf3RO_46x0F6zytNNFCKy8C7Wg3uM47lzP3t0msFclLLjrnDlPP4EdJo/exec';
+var liveGoogleData=null;
+function virendra_ga_data(data){
+  try{
+    liveGoogleData=data;
+    var t=new Date(data.lastSync).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    function upd(){
+      var ind=document.getElementById('live-sync-indicator');
+      var ls=document.getElementById('last-sync-time');
+      var st=document.getElementById('live-connection-status');
+      var pan=document.getElementById('live-test-panel');
+      if(ind){ind.textContent='● LIVE';ind.style.color='#10d98a';}
+      if(ls)ls.textContent=t;
+      if(st)st.innerHTML='<span style="color:#10d98a;font-weight:700">✅ Connected!</span> &nbsp;|&nbsp; '+(data.campaigns?data.campaigns.length:0)+' campaigns &nbsp;|&nbsp; Spend: <strong>₹'+Number(data.summary.totalCost||0).toLocaleString('en-IN',{maximumFractionDigits:0})+'</strong> &nbsp;|&nbsp; Conversions: <strong>'+Number(data.summary.totalConversions||0).toLocaleString('en-IN')+'</strong> &nbsp;|&nbsp; '+t;
+      if(pan){pan.style.background='rgba(16,217,138,0.06)';pan.style.borderColor='rgba(16,217,138,0.25)';}
+      if(typeof renderLiveGoogleTable==='function'&&data.campaigns)renderLiveGoogleTable(data.campaigns);
+      if(typeof updateLiveKPIs==='function'&&data.summary)updateLiveKPIs(data.summary);
+    }
+    if(document.readyState==='complete'||document.readyState==='interactive'){setTimeout(upd,200);}
+    else{window.addEventListener('DOMContentLoaded',upd);}
+    console.log('%c[Virendra] ✅ Live Google Ads — '+data.campaigns.length+' campaigns loaded','color:#10d98a;font-weight:bold');
+  }catch(e){console.error('[Virendra] Callback error:',e);}
+}
+
+// ── Fetch CSV from published Google Sheet (no CORS, no redirect) ──
+// CSV_URL is set by user — see instructions in dashboard
+var GOOGLE_SHEET_CSV_URL = '';  // <-- paste your CSV URL here
+
+// CORS proxies — tries each one in order until one works
+var CORS_PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?',
+  'https://proxy.cors.sh/'
+];
+var _proxyIdx = 0;
+
+function loadLiveGoogleAdsCSV() {
+  if(!GOOGLE_SHEET_CSV_URL) { showConnectionPending(); return; }
+  tryFetchWithProxy(0);
+}
+
+function tryFetchWithProxy(idx) {
+  if(idx >= CORS_PROXIES.length) {
+    console.error('[Virendra] All proxies failed');
+    showConnectionError();
+    return;
+  }
+  var proxyUrl = CORS_PROXIES[idx] + encodeURIComponent(GOOGLE_SHEET_CSV_URL);
+  console.log('[Virendra] Trying proxy ' + (idx+1) + ':', CORS_PROXIES[idx]);
+
+  var ind = document.getElementById('live-sync-indicator');
+  if(ind){ ind.textContent='⟳ Connecting...'; ind.style.color='var(--amb)'; }
+
+  fetch(proxyUrl)
+    .then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.text();
+    })
+    .then(function(csv){
+      if(!csv || csv.trim().length < 10) throw new Error('Empty response');
+      _proxyIdx = idx; // remember working proxy
+      console.log('[Virendra] ✅ Proxy ' + (idx+1) + ' worked!');
+      virendra_ga_data(parseGoogleSheetCSV(csv));
+    })
+    .catch(function(e){
+      console.warn('[Virendra] Proxy ' + (idx+1) + ' failed:', e.message);
+      tryFetchWithProxy(idx + 1); // try next proxy
+    });
+}
+
+function showConnectionPending() {
+  var st  = document.getElementById('live-connection-status');
+  var pan = document.getElementById('live-test-panel');
+  if(st) st.innerHTML = '⚠️ <strong>Paste your CSV URL</strong> — see the blue instructions box above the alert';
+  if(pan) { pan.style.background='rgba(168,94,0,0.06)'; pan.style.borderColor='rgba(168,94,0,0.3)'; }
+}
+
+function showConnectionError() {
+  var st  = document.getElementById('live-connection-status');
+  var pan = document.getElementById('live-test-panel');
+  if(st) st.innerHTML = '<span style="color:#C8243A;font-weight:700">❌ CSV fetch failed</span> — make sure sheet is published publicly';
+  if(pan) pan.style.borderColor = 'rgba(200,36,58,0.3)';
+}
+
+function parseGoogleSheetCSV(csv) {
+  var lines = csv.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+
+  // Find header row (contains "Campaign status" or "Campaign")
+  var headerIdx = -1;
+  for(var i=0; i<lines.length; i++){
+    if(lines[i].toLowerCase().includes('campaign status') || lines[i].toLowerCase().includes('campaign,')) {
+      headerIdx = i; break;
+    }
+  }
+  if(headerIdx === -1) headerIdx = 12; // fallback: row 13 (0-indexed = 12)
+
+  var headers = parseCSVLine(lines[headerIdx]).map(function(h){ return h.toLowerCase().trim(); });
+
+  // Column index helpers
+  var ci = function(name) {
+    var idx = headers.findIndex(function(h){ return h.includes(name); });
+    return idx >= 0 ? idx : -1;
+  };
+
+  var COL = {
+    status:      ci('campaign status') >= 0 ? ci('campaign status') : ci('status'),
+    name:        ci('campaign,') >= 0 ? ci('campaign,') : 1,
+    budget:      ci('budget'),
+    clicks:      ci('clicks'),
+    ctr:         ci('ctr'),
+    avgCpc:      ci('avg. cpc') >= 0 ? ci('avg. cpc') : ci('cpc'),
+    impressions: ci('impr.') >= 0 ? ci('impr.') : ci('impressions'),
+    cost:        ci('cost') >= 0 ? ci('cost') : ci('spend'),
+    absTop:      ci('abs. top') >= 0 ? ci('abs. top') : ci('absolute'),
+    topPct:      ci('top)') >= 0 ? ci('top)') : ci('top %'),
+    allConv:     ci('all conv') >= 0 ? ci('all conv') : ci('all conversions'),
+    conversions: ci('conversions') >= 0 ? ci('conversions') : -1,
+    costConv:    ci('cost / conv') >= 0 ? ci('cost / conv') : ci('cpl'),
+    costAllConv: ci('cost / all') >= 0 ? ci('cost / all') : ci('cpa'),
+    campType:    ci('campaign type') >= 0 ? ci('campaign type') : headers.length - 1
+  };
+
+  var campaigns = [];
+  var skipVals  = ['', 'campaign status', 'total: manager account', 'total'];
+  var totalRow  = null;
+
+  for(var i = headerIdx + 1; i < lines.length; i++){
+    var row = parseCSVLine(lines[i]);
+    if(!row || row.length < 3) continue;
+    var status = (row[COL.status] || '').trim();
+    if(skipVals.indexOf(status.toLowerCase()) >= 0) continue;
+    if(status.toLowerCase() === 'total: manager account' || lines[i].toLowerCase().includes('total:')) {
+      totalRow = row; continue;
+    }
+
+    campaigns.push({
+      status:       status,
+      name:         (row[COL.name] || '').trim(),
+      budget:       parseNum(row[COL.budget]),
+      clicks:       parseNum(row[COL.clicks]),
+      ctr:          row[COL.ctr] || '0%',
+      avgCpc:       parseNum(row[COL.avgCpc]),
+      impressions:  parseNum(row[COL.impressions]),
+      cost:         parseNum(row[COL.cost]),
+      absTopImpr:   row[COL.absTop] || '--',
+      topImprPct:   row[COL.topPct] || '--',
+      allConv:      parseNum(row[COL.allConv]),
+      conversions:  parseNum(row[COL.conversions]),
+      cpl:          parseNum(row[COL.costConv]),
+      cpa:          parseNum(row[COL.costAllConv]),
+      campType:     (row[COL.campType] || 'Search').trim(),
+      statusReason: ''
+    });
+  }
+
+  // Use first data row as total if not found
+  if(!totalRow && lines[7]) totalRow = parseCSVLine(lines[7]);
+
+  var summary = totalRow ? {
+    totalClicks:      parseNum(totalRow[COL.clicks]),
+    totalImpressions: parseNum(totalRow[COL.impressions]),
+    totalCost:        parseNum(totalRow[COL.cost]),
+    avgCtr:           totalRow[COL.ctr] || '0%',
+    avgCpc:           parseNum(totalRow[COL.avgCpc]),
+    totalConversions: parseNum(totalRow[COL.conversions]),
+    blendedCpl:       parseNum(totalRow[COL.costConv])
+  } : { totalClicks:1323176, totalImpressions:86279926, totalCost:19591726, avgCtr:'1.53%', avgCpc:14.81, totalConversions:5510, blendedCpl:3555 };
+
+  return { lastSync: new Date().toISOString(), account: 'Propertypistol MCC', summary: summary, campaigns: campaigns };
+}
+
+function parseCSVLine(line) {
+  var result = [], current = '', inQuotes = false;
+  for(var i=0; i<line.length; i++){
+    var ch = line[i];
+    if(ch==='"'){ inQuotes=!inQuotes; }
+    else if(ch===','&&!inQuotes){ result.push(current.trim()); current=''; }
+    else { current+=ch; }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+function parseNum(val) {
+  if(!val || val === '--' || val === '') return 0;
+  return parseFloat(String(val).replace(/[₹,%\s]/g,'').replace(/,/g,'')) || 0;
+}
+
+window.addEventListener('DOMContentLoaded', function(){
+  loadLiveGoogleAdsCSV();
+  // Auto-refresh every 30 mins
+  setInterval(loadLiveGoogleAdsCSV, 30 * 60 * 1000);
+});
+</script>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-name">Virendra</div>
+      <div class="logo-sub">Marketing OS</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Analytics</div>
+      <div class="nav-item active" onclick="navClick(this,'overview')"><span class="icon">◈</span>Overview</div>
+      <div class="nav-item" onclick="navClick(this,'google')"><span class="icon">◎</span>Google Ads</div>
+      <div class="nav-item" onclick="navClick(this,'meta')"><span class="icon">◉</span>Meta Ads</div>
+      <div class="nav-item" onclick="navClick(this,'keywords')"><span class="icon">◑</span>Keywords</div>
+      <div class="nav-item" onclick="navClick(this,'adsreport')"><span class="icon">▦</span>Ads Report<span class="nav-badge">3</span></div>
+      <div class="nav-section">CRM</div>
+      <div class="nav-item" onclick="navClick(this,'funnel')"><span class="icon">▽</span>Lead Funnel</div>
+      <div class="nav-item" onclick="navClick(this,'projects')"><span class="icon">▣</span>Projects</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div>Last sync: <span>Just now</span></div>
+      <div style="margin-top:4px;">Data: Apr 1 – Apr 30, 2025</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-title">Performance <span>Command Center</span></div>
+      <div class="filter-group">
+        <span class="filter-label">Project</span>
+        <select class="filter-select" id="proj-filter" onchange="updateDashboard()">
+          <option>All Projects</option>
+          <option>Skyline Heights</option>
+          <option>Marina Bay Villas</option>
+          <option>Green Meadows</option>
+          <option>Central Park Residences</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Region</span>
+        <select class="filter-select" id="region-filter" onchange="updateDashboard()">
+          <option>All Regions</option>
+          <option>Mumbai</option>
+          <option>Pune</option>
+          <option>Bangalore</option>
+          <option>Hyderabad</option>
+          <option>Delhi NCR</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Platform</span>
+        <select class="filter-select" id="platform-filter" onchange="applyFilters()">
+          <option value="all">All Platforms</option>
+          <option value="google">&#9711; Google Ads</option>
+          <option value="meta">&#9711; Meta Ads</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Campaign Type</span>
+        <select class="filter-select" id="camptype-filter" onchange="applyFilters()">
+          <option value="all">All Types</option>
+          <option value="search">Search</option>
+          <option value="pmax">PMax</option>
+          <option value="display">Display</option>
+          <option value="video">Video</option>
+          <option value="leadgen">Lead Gen</option>
+          <option value="carousel">Carousel</option>
+          <option value="retarget">Retargeting</option>
+          <option value="awareness">Awareness</option>
+          <option value="traffic">Traffic</option>
+        </select>
+      </div>
+      <div class="filter-group" style="position:relative;">
+        <span class="filter-label">Period</span>
+        <select class="filter-select" id="period-filter" onchange="handlePeriodChange(this)">
+          <option value="7d">Last 7 Days</option>
+          <option value="14d">Last 14 Days</option>
+          <option value="month">This Month</option>
+          <option value="30d" selected>Last 30 Days</option>
+          <option value="all">All Time</option>
+          <option value="custom">&#128197; Custom Range</option>
+        </select>
+        <div id="custom-date-popup" style="display:none;position:absolute;top:46px;left:0;z-index:999;
+          background:var(--card);border:1px solid var(--border);border-radius:10px;
+          padding:16px;min-width:290px;box-shadow:0 8px 32px rgba(0,0,0,.5);">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Custom Date Range</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div>
+              <div style="font-size:10px;color:var(--muted);margin-bottom:5px;">From</div>
+              <input type="date" id="date-from" style="width:100%;background:var(--card2);border:1px solid var(--border);
+                color:var(--text);padding:7px 10px;border-radius:6px;font-size:12px;outline:none;
+                font-family:DM Sans,sans-serif;color-scheme:dark;" onchange="validateDates()">
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--muted);margin-bottom:5px;">To</div>
+              <input type="date" id="date-to" style="width:100%;background:var(--card2);border:1px solid var(--border);
+                color:var(--text);padding:7px 10px;border-radius:6px;font-size:12px;outline:none;
+                font-family:DM Sans,sans-serif;color-scheme:dark;" onchange="validateDates()">
+            </div>
+          </div>
+          <div id="date-error" style="font-size:11px;color:var(--red);margin-bottom:8px;display:none;">&#9888; "From" date must be before "To" date.</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+            <span onclick="setQuickRange(7)"   class="quick-ask">Last 7D</span>
+            <span onclick="setQuickRange(14)"  class="quick-ask">Last 14D</span>
+            <span onclick="setQuickRange(30)"  class="quick-ask">Last 30D</span>
+            <span onclick="setQuickRangeMonth()" class="quick-ask">This Month</span>
+            <span onclick="setQuickRange(90)"  class="quick-ask">Last 90D</span>
+            <span onclick="setQuickRangeAll()" class="quick-ask">All Time</span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="applyCustomDate()" style="flex:1;background:var(--accent);color:#000;border:none;
+              padding:8px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;">Apply</button>
+            <button onclick="closeCustomDate()" style="flex:1;background:var(--card2);color:var(--muted);border:1px solid var(--border);
+              padding:8px;border-radius:6px;font-size:12px;cursor:pointer;">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <!-- GLOBAL SEARCH -->
+      <div style="position:relative;margin-left:auto;" id="global-search-wrap">
+        <div style="display:flex;align-items:center;background:var(--card);border:1px solid var(--border);
+          border-radius:8px;padding:0 12px;gap:8px;transition:border-color .2s;width:280px;"
+          id="search-box-wrap" onfocusin="this.style.borderColor='var(--accent)'" onfocusout="this.style.borderColor='var(--border)'">
+          <span style="color:var(--muted);font-size:14px;">&#128269;</span>
+          <input type="text" id="global-search" placeholder="Search Campaign, Ad ID, Project..." autocomplete="off"
+            style="background:transparent;border:none;color:var(--text);font-family:'DM Sans';font-size:12px;
+            outline:none;padding:8px 0;width:100%;"
+            oninput="globalSearch(this.value)"
+            onkeydown="navigateResults(event)"
+            onfocus="showSearchDropdown()">
+          <span id="search-clear" onclick="clearGlobalSearch()"
+            style="display:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;">&#10005;</span>
+        </div>
+
+        <!-- SEARCH DROPDOWN -->
+        <div id="search-dropdown" style="display:none;position:absolute;top:44px;left:0;right:0;
+          background:var(--card);border:1px solid var(--border);border-radius:10px;
+          box-shadow:0 12px 40px rgba(0,0,0,.6);z-index:1000;max-height:420px;overflow-y:auto;">
+
+          <!-- Search hint -->
+          <div id="search-hint" style="padding:12px 14px;border-bottom:1px solid var(--border);">
+            <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Search by</div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px;">
+              <span style="font-size:10px;background:rgba(78,159,255,.12);color:var(--blue);padding:2px 8px;border-radius:4px;border:1px solid rgba(78,159,255,.25);">Campaign ID</span>
+              <span style="font-size:10px;background:rgba(78,159,255,.12);color:var(--blue);padding:2px 8px;border-radius:4px;border:1px solid rgba(78,159,255,.25);">Campaign Name</span>
+              <span style="font-size:10px;background:rgba(16,217,138,.1);color:var(--green);padding:2px 8px;border-radius:4px;border:1px solid rgba(16,217,138,.25);">Ad Group ID</span>
+              <span style="font-size:10px;background:rgba(16,217,138,.1);color:var(--green);padding:2px 8px;border-radius:4px;border:1px solid rgba(16,217,138,.25);">Ad Group Name</span>
+              <span style="font-size:10px;background:rgba(245,166,35,.12);color:var(--accent);padding:2px 8px;border-radius:4px;border:1px solid rgba(245,166,35,.25);">Ad Set ID</span>
+              <span style="font-size:10px;background:rgba(245,166,35,.12);color:var(--accent);padding:2px 8px;border-radius:4px;border:1px solid rgba(245,166,35,.25);">Ad Set Name</span>
+              <span style="font-size:10px;background:rgba(167,139,250,.12);color:var(--purple);padding:2px 8px;border-radius:4px;border:1px solid rgba(167,139,250,.25);">Ad ID</span>
+              <span style="font-size:10px;background:rgba(167,139,250,.12);color:var(--purple);padding:2px 8px;border-radius:4px;border:1px solid rgba(167,139,250,.25);">Ad Name</span>
+              <span style="font-size:10px;background:var(--card2);color:var(--muted);padding:2px 8px;border-radius:4px;border:1px solid var(--border);">Project</span>
+              <span style="font-size:10px;background:var(--card2);color:var(--muted);padding:2px 8px;border-radius:4px;border:1px solid var(--border);">Region</span>
+              <span style="font-size:10px;background:var(--card2);color:var(--muted);padding:2px 8px;border-radius:4px;border:1px solid var(--border);">Keyword</span>
+              <span style="font-size:10px;background:var(--card2);color:var(--muted);padding:2px 8px;border-radius:4px;border:1px solid var(--border);">Match Type</span>
+              <span style="font-size:10px;background:var(--card2);color:var(--muted);padding:2px 8px;border-radius:4px;border:1px solid var(--border);">Audience</span>
+              <span style="font-size:10px;background:var(--card2);color:var(--muted);padding:2px 8px;border-radius:4px;border:1px solid var(--border);">Placement</span>
+            </div>
+          </div>
+          <div id="search-results"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div class="live-dot"></div>
+        <span style="font-size:11px;color:var(--muted)" id="live-sync-indicator">● LIVE</span>
+        <span style="font-size:10px;color:var(--muted);font-family:'IBM Plex Mono'" id="last-sync-time"></span>
+        <button class="btn-refresh" onclick="updateDashboard()">⟳ Refresh</button>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+      <div class="dashboard" id="main-dashboard">
+
+        <!-- ACTIVE FILTER CHIPS -->
+        <div id="active-filters-bar" style="display:none;margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;">Active Filters:</span>
+          <div id="filter-chips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+          <span onclick="clearAllFilters()" style="font-size:10px;color:var(--red);cursor:pointer;margin-left:4px;text-decoration:underline;">Clear all</span>
+        </div>
+
+        <!-- CSV SETUP INSTRUCTIONS -->
+        <div id="csv-setup-box" style="background:#EBF0FE;border:1px solid rgba(22,81,240,0.25);
+          border-radius:10px;padding:14px 18px;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <span style="font-size:16px;">📋</span>
+            <strong style="font-size:13px;color:#1651F0;">One-time setup — Paste your Google Sheet CSV URL below</strong>
+            <button onclick="document.getElementById('csv-setup-box').style.display='none'"
+              style="margin-left:auto;background:none;border:none;cursor:pointer;color:#8D96AD;font-size:16px;">✕</button>
+          </div>
+          <div style="font-size:12px;color:#4A5468;line-height:1.8;margin-bottom:12px;">
+            <strong>Step 1:</strong> Open your <em>Virendra Marketing Data_V1</em> Google Sheet<br>
+            <strong>Step 2:</strong> Go to <strong>File → Share → Publish to web</strong><br>
+            <strong>Step 3:</strong> Select the <strong>"Google Campaign"</strong> tab → Format: <strong>CSV</strong> → Click <strong>Publish</strong><br>
+            <strong>Step 4:</strong> Copy the URL and paste below 👇
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" id="csv-url-input" placeholder="https://docs.google.com/spreadsheets/d/.../pub?gid=...&single=true&output=csv"
+              style="flex:1;background:#fff;border:1.5px solid rgba(22,81,240,0.3);color:#0C1524;
+              padding:8px 12px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:11px;outline:none;">
+            <button onclick="saveCSVUrl()"
+              style="background:#1651F0;color:#fff;border:none;padding:9px 18px;border-radius:7px;
+              font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;letter-spacing:.3px;">
+              ✓ Connect
+            </button>
+          </div>
+          <div id="csv-url-hint" style="font-size:10px;color:#8D96AD;margin-top:6px;">
+            The URL looks like: https://docs.google.com/spreadsheets/d/SHEET_ID/pub?gid=TAB_ID&single=true&output=csv
+          </div>
+        </div>
+
+        <!-- LIVE DATA TEST PANEL -->
+        <div id="live-test-panel" style="background:rgba(22,81,240,0.06);border:1px solid rgba(22,81,240,0.2);
+          border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;
+          gap:12px;flex-wrap:wrap;">
+          <div style="font-size:13px;">🔌</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:600;color:var(--acc)">Google Ads Live Connection</div>
+            <div id="live-connection-status" style="font-size:11px;color:var(--muted);margin-top:2px;">
+              Connecting to Propertypistol MCC...
+            </div>
+          </div>
+          <button onclick="testLiveConnection()" style="background:var(--acc);color:#000;border:none;
+            padding:6px 14px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;
+            letter-spacing:.3px;flex-shrink:0;">
+            🔄 Test Connection
+          </button>
+          <button onclick="loadLiveGoogleAds()" style="background:var(--card2);color:var(--text);
+            border:1px solid var(--border);padding:6px 14px;border-radius:6px;font-size:11px;
+            cursor:pointer;flex-shrink:0;">
+            ↻ Refresh Data
+          </button>
+        </div>
+
+        <!-- ALERT -->
+        <div class="alert-strip">
+          <span class="alert-icon">⚠</span>
+          <div class="alert-text">
+            <strong>3 Loss-making Campaigns Detected</strong> — "Skyline Brand Awareness", "Green Meadows Retargeting", "Marina Bay Broad Match" have CPL &gt; ₹12,000 with 0 bookings. <span style="color:var(--accent);cursor:pointer;" onclick="askAgent('Analyze the 3 loss-making campaigns and suggest actions')">Ask AI Agent →</span>
+          </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs">
+          <div class="tab active" onclick="switchTab(event,'tab-overview')">Overview</div>
+          <div class="tab" onclick="switchTab(event,'tab-google')">Google Ads</div>
+          <div class="tab" onclick="switchTab(event,'tab-meta')">Meta Ads</div>
+          <div class="tab" onclick="switchTab(event,'tab-keywords')">Keywords</div>
+          <div class="tab" onclick="switchTab(event,'tab-adsreport')">Ads Report</div>
+          <div class="tab" onclick="switchTab(event,'tab-funnel')">Lead Funnel</div>
+          <div class="tab" onclick="switchTab(event,'tab-target')">🎯 Target vs Achieved</div>
+        </div>
+
+        <!-- ===== OVERVIEW ===== -->
+        <div class="tab-pane active tab-content" id="tab-overview">
+          <div class="kpi-grid">
+            <div class="kpi-card accent">
+              <div class="kpi-label">Total Spend</div>
+              <div class="kpi-value" id="kpi-spend">₹48.6L</div>
+              <div class="kpi-delta delta-up">↑ 12.4% vs last month</div>
+              <div class="kpi-sub">Google ₹29L · Meta ₹19L</div>
+            </div>
+            <div class="kpi-card blue">
+              <div class="kpi-label">Total Clicks</div>
+              <div class="kpi-value">1,84,320</div>
+              <div class="kpi-delta delta-up">↑ 8.1%</div>
+              <div class="kpi-sub">Avg CPC ₹26.4</div>
+            </div>
+            <div class="kpi-card green">
+              <div class="kpi-label">Total Leads</div>
+              <div class="kpi-value" id="kpi-leads">3,847</div>
+              <div class="kpi-delta delta-up">↑ 6.3%</div>
+              <div class="kpi-sub">Avg CPL ₹1,263</div>
+            </div>
+            <div class="kpi-card purple">
+              <div class="kpi-label">Site Visits</div>
+              <div class="kpi-value">892</div>
+              <div class="kpi-delta delta-up">↑ 18.2%</div>
+              <div class="kpi-sub">Conv: 23.2%</div>
+            </div>
+            <div class="kpi-card green">
+              <div class="kpi-label">Bookings</div>
+              <div class="kpi-value" id="kpi-bookings">214</div>
+              <div class="kpi-delta delta-up">↑ 4.9%</div>
+              <div class="kpi-sub">CPB ₹22,700</div>
+            </div>
+            <div class="kpi-card red">
+              <div class="kpi-label">Lost Campaigns</div>
+              <div class="kpi-value" style="color:var(--red)">3</div>
+              <div class="kpi-delta delta-down">CPL &gt; ₹12K</div>
+              <div class="kpi-sub" style="cursor:pointer;color:var(--accent)" onclick="askAgent('Analyze the 3 loss-making campaigns')">View AI Analysis →</div>
+            </div>
+          </div>
+
+          <div class="grid-65">
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">Spend vs Leads — Daily Trend</div>
+                <div class="chart-actions">
+                  <span class="chart-btn active">30D</span>
+                  <span class="chart-btn">7D</span>
+                </div>
+              </div>
+              <canvas id="overviewTrend" height="180"></canvas>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">Spend by Platform</div>
+                <div class="chart-meta">Apr 2025</div>
+              </div>
+              <canvas id="spendPie" height="180"></canvas>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">Project-wise CPL</div>
+              </div>
+              <canvas id="projectCPL" height="160"></canvas>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">Region-wise Lead Volume</div>
+              </div>
+              <canvas id="regionLeads" height="160"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== GOOGLE ADS ===== -->
+        <div class="tab-pane tab-content" id="tab-google">
+          <div class="section-title">Google Ads — <span>Campaign Performance</span></div>
+          <div class="kpi-grid">
+            <div class="kpi-card accent">
+              <div class="kpi-label">Google Spend</div>
+              <div class="kpi-value">₹29.1L</div>
+              <div class="kpi-delta delta-up">↑ 9.2%</div>
+            </div>
+            <div class="kpi-card blue">
+              <div class="kpi-label">Impressions</div>
+              <div class="kpi-value">42.8L</div>
+              <div class="kpi-delta delta-up">↑ 5.1%</div>
+            </div>
+            <div class="kpi-card blue">
+              <div class="kpi-label">Clicks</div>
+              <div class="kpi-value">1,12,480</div>
+              <div class="kpi-delta delta-up">↑ 7.3%</div>
+            </div>
+            <div class="kpi-card purple">
+              <div class="kpi-label">CTR</div>
+              <div class="kpi-value">2.63%</div>
+              <div class="kpi-delta delta-up">↑ 0.2pp</div>
+            </div>
+            <div class="kpi-card green">
+              <div class="kpi-label">Avg CPC</div>
+              <div class="kpi-value">₹25.9</div>
+              <div class="kpi-delta delta-down">↑ ₹1.2</div>
+            </div>
+            <div class="kpi-card green">
+              <div class="kpi-label">Conversions</div>
+              <div class="kpi-value">2,248</div>
+              <div class="kpi-delta delta-up">↑ 4.8%</div>
+            </div>
+          </div>
+
+          <div class="grid-65">
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">Google — Spend & Conv Daily</div>
+              </div>
+              <canvas id="googleTrend" height="170"></canvas>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header"><div class="chart-title">Campaign Type Split</div></div>
+              <canvas id="googleCampType" height="170"></canvas>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-head">
+              <span class="table-title">Google Campaign Report</span>
+              <input class="search-input" type="text" placeholder="🔍 Search campaign..." oninput="filterTable(this,'google-camp-table')">
+            </div>
+            <table id="google-camp-table">
+              <thead><tr>
+                <th>Campaign</th><th>Type</th><th>Project</th><th>Spend</th>
+                <th>Clicks</th><th>CTR</th><th>Conv</th><th>CPL</th><th>Status</th>
+              </tr></thead>
+              <tbody>
+                <tr><td>Skyline Heights — Search Branded<span class="tag-loss">Need Attention</span></td><td>Search</td><td>Skyline Heights</td><td class="mono">₹4,82,000</td><td class="mono">18,420</td><td class="mono">3.1%</td><td class="mono">38</td><td class="mono" style="color:var(--red)">₹12,684</td><td><span class="badge badge-red">Paused</span></td></tr>
+                <tr><td>Marina Bay — PMax</td><td>PMax</td><td>Marina Bay Villas</td><td class="mono">₹3,90,000</td><td class="mono">14,200</td><td class="mono">2.8%</td><td class="mono">312</td><td class="mono" style="color:var(--green)">₹1,250</td><td><span class="badge badge-green">On Track/span></td></tr>
+                <tr><td>Green Meadows — Display</td><td>Display</td><td>Green Meadows</td><td class="mono">₹2,10,000</td><td class="mono">8,400</td><td class="mono">0.9%</td><td class="mono">17</td><td class="mono" style="color:var(--red)">₹12,353</td><td><span class="badge badge-red">Paused</span></td></tr>
+                <tr><td>Central Park — Search NonBrand</td><td>Search</td><td>Central Park</td><td class="mono">₹5,60,000</td><td class="mono">22,100</td><td class="mono">3.4%</td><td class="mono">480</td><td class="mono" style="color:var(--green)">₹1,167</td><td><span class="badge badge-green">On Track/span></td></tr>
+                <tr><td>Skyline Heights — PMax</td><td>PMax</td><td>Skyline Heights</td><td class="mono">₹6,20,000</td><td class="mono">24,800</td><td class="mono">3.0%</td><td class="mono">620</td><td class="mono" style="color:var(--green)">₹1,000</td><td><span class="badge badge-green">On Track/span></td></tr>
+                <tr><td>Marina Bay — Search Brand</td><td>Search</td><td>Marina Bay Villas</td><td class="mono">₹2,80,000</td><td class="mono">9,600</td><td class="mono">4.2%</td><td class="mono">360</td><td class="mono" style="color:var(--green)">₹778</td><td><span class="badge badge-green">On Track/span></td></tr>
+                <tr><td>Green Meadows — PMax</td><td>PMax</td><td>Green Meadows</td><td class="mono">₹3,40,000</td><td class="mono">13,400</td><td class="mono">2.4%</td><td class="mono">280</td><td class="mono" style="color:var(--accent)">₹1,214</td><td><span class="badge badge-yellow">Review</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ===== META ADS ===== -->
+        <div class="tab-pane tab-content" id="tab-meta">
+          <div class="section-title">Meta Ads — <span>Facebook & Instagram</span></div>
+          <div class="kpi-grid">
+            <div class="kpi-card accent">
+              <div class="kpi-label">Meta Spend</div>
+              <div class="kpi-value">₹19.5L</div>
+              <div class="kpi-delta delta-up">↑ 17.4%</div>
+            </div>
+            <div class="kpi-card blue">
+              <div class="kpi-label">Reach</div>
+              <div class="kpi-value">28.4L</div>
+              <div class="kpi-delta delta-up">↑ 11.2%</div>
+            </div>
+            <div class="kpi-card blue">
+              <div class="kpi-label">Clicks</div>
+              <div class="kpi-value">71,840</div>
+              <div class="kpi-delta delta-up">↑ 9.1%</div>
+            </div>
+            <div class="kpi-card purple">
+              <div class="kpi-label">CTR</div>
+              <div class="kpi-value">1.84%</div>
+              <div class="kpi-delta delta-down">↓ 0.1pp</div>
+            </div>
+            <div class="kpi-card green">
+              <div class="kpi-label">Avg CPM</div>
+              <div class="kpi-value">₹68.6</div>
+              <div class="kpi-delta delta-down">↑ ₹4.2</div>
+            </div>
+            <div class="kpi-card green">
+              <div class="kpi-label">Lead Forms</div>
+              <div class="kpi-value">1,599</div>
+              <div class="kpi-delta delta-up">↑ 8.7%</div>
+            </div>
+          </div>
+          <div class="grid-65">
+            <div class="chart-card">
+              <div class="chart-header"><div class="chart-title">Meta — Daily Reach vs Leads</div></div>
+              <canvas id="metaTrend" height="170"></canvas>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header"><div class="chart-title">Platform Split (FB vs IG)</div></div>
+              <canvas id="metaSplit" height="170"></canvas>
+            </div>
+          </div>
+          <div class="table-card">
+            <div class="table-head">
+              <span class="table-title">Meta Campaign Report</span>
+              <input class="search-input" type="text" placeholder="🔍 Search..." oninput="filterTable(this,'meta-camp-table')">
+            </div>
+            <table id="meta-camp-table">
+              <thead><tr>
+                <th>Campaign</th><th>Objective</th><th>Project</th><th>Spend</th>
+                <th>Reach</th><th>CTR</th><th>Leads</th><th>CPL</th><th>Status</th>
+              </tr></thead>
+              <tbody>
+                <tr><td>Skyline Brand Awareness<span class="tag-loss">Need Attention</span></td><td>Awareness</td><td>Skyline Heights</td><td class="mono">₹3,20,000</td><td class="mono">6.4L</td><td class="mono">0.8%</td><td class="mono">26</td><td class="mono" style="color:var(--red)">₹12,308</td><td><span class="badge badge-red">Paused</span></td></tr>
+                <tr><td>Marina Bay — Lead Gen</td><td>Lead Gen</td><td>Marina Bay Villas</td><td class="mono">₹4,10,000</td><td class="mono">5.1L</td><td class="mono">2.3%</td><td class="mono">396</td><td class="mono" style="color:var(--green)">₹1,035</td><td><span class="badge badge-green">On Track/span></td></tr>
+                <tr><td>Green Meadows Retargeting<span class="tag-loss">Need Attention</span></td><td>Retarget</td><td>Green Meadows</td><td class="mono">₹1,80,000</td><td class="mono">2.2L</td><td class="mono">1.1%</td><td class="mono">14</td><td class="mono" style="color:var(--red)">₹12,857</td><td><span class="badge badge-red">Paused</span></td></tr>
+                <tr><td>Central Park — Carousel</td><td>Traffic</td><td>Central Park</td><td class="mono">₹2,90,000</td><td class="mono">4.8L</td><td class="mono">2.8%</td><td class="mono">310</td><td class="mono" style="color:var(--green)">₹935</td><td><span class="badge badge-green">On Track/span></td></tr>
+                <tr><td>Skyline — Video Leads</td><td>Lead Gen</td><td>Skyline Heights</td><td class="mono">₹3,60,000</td><td class="mono">5.4L</td><td class="mono">2.1%</td><td class="mono">320</td><td class="mono" style="color:var(--green)">₹1,125</td><td><span class="badge badge-green">On Track/span></td></tr>
+                <tr><td>Marina Bay Broad Match<span class="tag-loss">Need Attention</span></td><td>Traffic</td><td>Marina Bay Villas</td><td class="mono">₹2,40,000</td><td class="mono">3.6L</td><td class="mono">0.7%</td><td class="mono">19</td><td class="mono" style="color:var(--red)">₹12,632</td><td><span class="badge badge-red">Paused</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ===== KEYWORDS ===== -->
+        <div class="tab-pane tab-content" id="tab-keywords">
+          <div class="section-title">Keyword <span>Intelligence Report</span></div>
+          <div class="grid-2" style="margin-bottom:16px;">
+            <div class="chart-card">
+              <div class="chart-header"><div class="chart-title">Top 10 Keywords by Spend</div></div>
+              <canvas id="kwSpend" height="200"></canvas>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header"><div class="chart-title">Quality Score Distribution</div></div>
+              <canvas id="kwQS" height="200"></canvas>
+            </div>
+          </div>
+          <div class="table-card">
+            <div class="table-head">
+              <span class="table-title">Keyword Performance</span>
+              <input class="search-input" type="text" placeholder="🔍 Search keyword..." oninput="filterTable(this,'kw-table')">
+            </div>
+            <table id="kw-table">
+              <thead><tr>
+                <th>Keyword</th><th>Match</th><th>Project</th><th>Impressions</th>
+                <th>Clicks</th><th>CTR</th><th>Avg CPC</th><th>Conv</th><th>QS</th><th>Reco</th>
+              </tr></thead>
+              <tbody>
+                <tr><td>2 bhk flats mumbai</td><td><span class="badge badge-blue">Exact</span></td><td>Skyline Heights</td><td class="mono">82,400</td><td class="mono">4,120</td><td class="mono">5.0%</td><td class="mono">₹22</td><td class="mono">412</td><td><span style="color:var(--green)">9/10</span></td><td><span class="badge badge-green">Scale</span></td></tr>
+                <tr><td>luxury apartments pune</td><td><span class="badge badge-blue">Exact</span></td><td>Marina Bay</td><td class="mono">64,200</td><td class="mono">2,890</td><td class="mono">4.5%</td><td class="mono">₹31</td><td class="mono">320</td><td><span style="color:var(--green)">8/10</span></td><td><span class="badge badge-green">Scale</span></td></tr>
+                <tr><td>real estate investment bangalore</td><td><span class="badge badge-yellow">Broad</span></td><td>Green Meadows</td><td class="mono">1,20,000</td><td class="mono">1,800</td><td class="mono">1.5%</td><td class="mono">₹42</td><td class="mono">38</td><td><span style="color:var(--red)">3/10</span></td><td><span class="badge badge-red">Pause</span></td></tr>
+                <tr><td>affordable homes hyderabad</td><td><span class="badge badge-blue">Phrase</span></td><td>Central Park</td><td class="mono">54,800</td><td class="mono">2,740</td><td class="mono">5.0%</td><td class="mono">₹18</td><td class="mono">289</td><td><span style="color:var(--green)">8/10</span></td><td><span class="badge badge-green">Scale</span></td></tr>
+                <tr><td>villa plots near delhi</td><td><span class="badge badge-yellow">Broad</span></td><td>Skyline Heights</td><td class="mono">98,600</td><td class="mono">1,380</td><td class="mono">1.4%</td><td class="mono">₹38</td><td class="mono">22</td><td><span style="color:var(--red)">4/10</span></td><td><span class="badge badge-red">Pause</span></td></tr>
+                <tr><td>3 bhk flats mumbai</td><td><span class="badge badge-blue">Exact</span></td><td>Skyline Heights</td><td class="mono">71,200</td><td class="mono">3,204</td><td class="mono">4.5%</td><td class="mono">₹26</td><td class="mono">368</td><td><span style="color:var(--green)">8/10</span></td><td><span class="badge badge-green">Scale</span></td></tr>
+                <tr><td>marina bay villas pune</td><td><span class="badge badge-blue">Exact</span></td><td>Marina Bay</td><td class="mono">34,000</td><td class="mono">1,802</td><td class="mono">5.3%</td><td class="mono">₹28</td><td class="mono">214</td><td><span style="color:var(--green)">9/10</span></td><td><span class="badge badge-green">Scale</span></td></tr>
+                <tr><td>buy flat in bangalore cheap</td><td><span class="badge badge-yellow">Broad</span></td><td>Green Meadows</td><td class="mono">1,62,000</td><td class="mono">1,620</td><td class="mono">1.0%</td><td class="mono">₹52</td><td class="mono">12</td><td><span style="color:var(--red)">2/10</span></td><td><span class="badge badge-red">Pause</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ===== ADS REPORT ===== -->
+        <div class="tab-pane tab-content" id="tab-adsreport">
+          <div class="section-title">Ads Creative <span>Performance Report</span></div>
+          <div class="grid-2" style="margin-bottom:16px;">
+            <div class="chart-card">
+              <div class="chart-header"><div class="chart-title">Creative Type CTR Comparison</div></div>
+              <canvas id="adsCTR" height="180"></canvas>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header"><div class="chart-title">Ad Format Lead Distribution</div></div>
+              <canvas id="adsLeads" height="180"></canvas>
+            </div>
+          </div>
+          <div class="table-card">
+            <div class="table-head">
+              <span class="table-title">Ad Creative Report — All Platforms</span>
+              <input class="search-input" type="text" placeholder="🔍 Search ad..." oninput="filterTable(this,'ads-table')">
+            </div>
+            <table id="ads-table">
+              <thead><tr>
+                <th>Ad Name</th><th>Platform</th><th>Type</th><th>Project</th>
+                <th>Impressions</th><th>Clicks</th><th>CTR</th><th>Conv</th><th>CPA</th><th>Status</th>
+              </tr></thead>
+              <tbody>
+                <tr><td>Skyline - Video 30s "Dream Home"</td><td><span class="platform p-google">◎ Google</span></td><td>Video</td><td>Skyline Heights</td><td class="mono">4,20,000</td><td class="mono">12,600</td><td class="mono">3.0%</td><td class="mono">380</td><td class="mono" style="color:var(--green)">₹1,100</td><td><span class="badge badge-green">On Track/span></td></tr>
+                <tr><td>Marina Bay - Carousel "3BHK Views"</td><td><span class="platform p-meta">◉ Meta</span></td><td>Carousel</td><td>Marina Bay</td><td class="mono">3,80,000</td><td class="mono">8,740</td><td class="mono">2.3%</td><td class="mono">310</td><td class="mono" style="color:var(--green)">₹1,290</td><td><span class="badge badge-green">On Track/span></td></tr>
+                <tr><td>Green Meadows - Static Banner</td><td><span class="platform p-google">◎ Google</span></td><td>Display</td><td>Green Meadows</td><td class="mono">8,60,000</td><td class="mono">6,880</td><td class="mono">0.8%</td><td class="mono">24</td><td class="mono" style="color:var(--red)">₹7,500</td><td><span class="badge badge-red">Paused</span></td></tr>
+                <tr><td>Central Park - RSA "Book Now"</td><td><span class="platform p-google">◎ Google</span></td><td>RSA</td><td>Central Park</td><td class="mono">2,40,000</td><td class="mono">10,080</td><td class="mono">4.2%</td><td class="mono">456</td><td class="mono" style="color:var(--green)">₹982</td><td><span class="badge badge-green">On Track/span></td></tr>
+                <tr><td>Skyline - Lead Form "2BHK Offer"</td><td><span class="platform p-meta">◉ Meta</span></td><td>Lead Ad</td><td>Skyline Heights</td><td class="mono">5,10,000</td><td class="mono">10,710</td><td class="mono">2.1%</td><td class="mono">290</td><td class="mono" style="color:var(--green)">₹1,138</td><td><span class="badge badge-green">On Track/span></td></tr>
+                <tr><td>Marina Bay - Stories "Luxury Life"</td><td><span class="platform p-meta">◉ Meta</span></td><td>Stories</td><td>Marina Bay</td><td class="mono">6,20,000</td><td class="mono">8,060</td><td class="mono">1.3%</td><td class="mono">106</td><td class="mono" style="color:var(--accent)">₹2,264</td><td><span class="badge badge-yellow">Review</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ===== FUNNEL ===== -->
+        <div class="tab-pane tab-content" id="tab-funnel">
+          <div class="section-title">Lead → Booking <span>Conversion Funnel</span></div>
+          <div class="grid-2" style="margin-bottom:0;">
+            <div class="chart-card" style="margin-bottom:16px;">
+              <div class="chart-header"><div class="chart-title">Overall Funnel — Apr 2025</div></div>
+              <div class="funnel-wrap" id="funnel-viz"></div>
+            </div>
+            <div class="chart-card" style="margin-bottom:16px;">
+              <div class="chart-header"><div class="chart-title">Stage Drop-off Rate by Project</div></div>
+              <canvas id="funnelDropoff" height="200"></canvas>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="chart-card">
+              <div class="chart-header"><div class="chart-title">Leads by Source</div></div>
+              <canvas id="leadSource" height="180"></canvas>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header"><div class="chart-title">Booking Trend — Monthly</div></div>
+              <canvas id="bookingTrend" height="180"></canvas>
+            </div>
+          </div>
+          <div class="table-card" style="margin-top:16px;">
+            <div class="table-head">
+              <span class="table-title">Project-wise Funnel Summary</span>
+            </div>
+            <table>
+              <thead><tr>
+                <th>Project</th><th>Region</th><th>Leads</th><th>Site Visits</th>
+                <th>Negotiations</th><th>Bookings</th><th>L→B Conv%</th><th>CPB</th><th>Revenue Est.</th>
+              </tr></thead>
+              <tbody>
+                <tr><td>Skyline Heights</td><td>Mumbai</td><td class="mono">1,240</td><td class="mono">312</td><td class="mono">186</td><td class="mono">72</td><td class="mono" style="color:var(--green)">5.8%</td><td class="mono">₹21,900</td><td class="mono" style="color:var(--green)">₹18.7Cr</td></tr>
+                <tr><td>Marina Bay Villas</td><td>Pune</td><td class="mono">980</td><td class="mono">248</td><td class="mono">148</td><td class="mono">62</td><td class="mono" style="color:var(--green)">6.3%</td><td class="mono">₹19,800</td><td class="mono" style="color:var(--green)">₹24.2Cr</td></tr>
+                <tr><td>Green Meadows</td><td>Bangalore</td><td class="mono">820</td><td class="mono">164</td><td class="mono">82</td><td class="mono">38</td><td class="mono" style="color:var(--accent)">4.6%</td><td class="mono">₹28,400</td><td class="mono" style="color:var(--accent)">₹8.4Cr</td></tr>
+                <tr><td>Central Park Res.</td><td>Hyderabad</td><td class="mono">807</td><td class="mono">168</td><td class="mono">102</td><td class="mono">42</td><td class="mono" style="color:var(--green)">5.2%</td><td class="mono">₹20,600</td><td class="mono" style="color:var(--green)">₹10.1Cr</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ===== PROJECTS ===== -->
+        <div class="tab-pane tab-content" id="tab-projects">
+          <div class="section-title">Project-wise <span>Performance</span></div>
+          <div class="kpi-grid">
+            <div class="kpi-card accent"><div class="kpi-label">Active Projects</div><div class="kpi-value">4</div></div>
+            <div class="kpi-card green"><div class="kpi-label">Best CPL</div><div class="kpi-value">₹778</div><div class="kpi-sub">Marina Bay Brand</div></div>
+            <div class="kpi-card blue"><div class="kpi-label">Highest Volume</div><div class="kpi-value">Skyline</div><div class="kpi-sub">1,240 leads</div></div>
+            <div class="kpi-card red"><div class="kpi-label">Worst CPL</div><div class="kpi-value">₹28,400</div><div class="kpi-sub" style="color:var(--red)">Green Meadows</div></div>
+          </div>
+        </div>
+
+
+        <!-- ===== TARGET VS ACHIEVED ===== -->
+        <div class="tab-pane tab-content" id="tab-target">
+          <div class="section-title">Target vs <span>Achieved</span></div>
+
+          <!-- UNDERPERFORMING ALERT BANNER -->
+          <div style="background:linear-gradient(135deg,rgba(255,69,96,.1),rgba(255,108,53,.08));
+            border:1px solid rgba(255,69,96,.3);border-radius:10px;padding:14px 18px;
+            margin-bottom:20px;display:flex;align-items:flex-start;gap:14px;">
+            <div style="font-size:24px;line-height:1;margin-top:2px;">🚨</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:6px;letter-spacing:.3px;">
+                Underperforming Project — Immediate Action Required
+              </div>
+              <div style="font-size:12px;color:var(--text);line-height:1.7;">
+                <strong style="color:var(--accent)">Green Meadows (Bangalore)</strong> is critically underperforming across all KPIs this month.
+                Bookings at <strong style="color:var(--red)">69% of target</strong> (38 vs 55),
+                CPQL is <strong style="color:var(--red)">₹4,820</strong> against target of ₹3,000 (+61% over),
+                Spend efficiency at <strong style="color:var(--red)">₹1,366 CPL</strong> vs ₹1,000 target.
+                3 campaigns flagged as "Need Attention" consuming <strong style="color:var(--red)">₹3.9L with near-zero ROI</strong>.
+              </div>
+              <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+                <span onclick="askAgent('Green Meadows is underperforming — bookings at 69% of target, CPQL ₹4820 vs target ₹3000. Give me a turnaround action plan.')"
+                  style="background:rgba(255,69,96,.2);color:var(--red);border:1px solid rgba(255,69,96,.4);
+                  padding:5px 12px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.3px;">
+                  🧠 Ask AI for Turnaround Plan →
+                </span>
+                <span onclick="document.querySelectorAll('.tab')[2].click()"
+                  style="background:var(--card2);color:var(--muted);border:1px solid var(--border);
+                  padding:5px 12px;border-radius:5px;font-size:11px;cursor:pointer;">
+                  View Campaigns →
+                </span>
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Health Score</div>
+              <div style="font-size:28px;font-family:'IBM Plex Mono';font-weight:700;color:var(--red);line-height:1;">28<span style="font-size:14px;">/100</span></div>
+              <div style="font-size:10px;color:var(--red);margin-top:3px;">Critical</div>
+            </div>
+          </div>
+
+          <!-- Summary KPI row — 9 cards including QL, CPQL, Spends -->
+          <div class="kpi-grid" style="margin-bottom:20px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));">
+            <div class="kpi-card green">
+              <div class="kpi-label">Leads Achieved</div>
+              <div class="kpi-value">3,847</div>
+              <div class="kpi-delta delta-up">✅ 109% of target</div>
+              <div class="kpi-sub">Target: 3,500</div>
+            </div>
+            <div class="kpi-card blue">
+              <div class="kpi-label">QL — Qualified Leads</div>
+              <div class="kpi-value">2,698</div>
+              <div class="kpi-delta delta-up">✅ 103% of target</div>
+              <div class="kpi-sub">Target: 2,600 · QL Rate 70%</div>
+            </div>
+            <div class="kpi-card red">
+              <div class="kpi-label">CPQL</div>
+              <div class="kpi-value">₹1,802</div>
+              <div class="kpi-delta delta-down">⚠ Over by ₹302</div>
+              <div class="kpi-sub">Target CPQL: ₹1,500</div>
+            </div>
+            <div class="kpi-card red">
+              <div class="kpi-label">Bookings Achieved</div>
+              <div class="kpi-value">214</div>
+              <div class="kpi-delta delta-down">⚠ 89% of target</div>
+              <div class="kpi-sub">Target: 240</div>
+            </div>
+            <div class="kpi-card green">
+              <div class="kpi-label">Total Spend</div>
+              <div class="kpi-value">₹48.6L</div>
+              <div class="kpi-delta delta-up">✅ 97% of budget</div>
+              <div class="kpi-sub">Budget: ₹50L · Saved ₹1.4L</div>
+            </div>
+            <div class="kpi-card green">
+              <div class="kpi-label">Site Visits</div>
+              <div class="kpi-value">892</div>
+              <div class="kpi-delta delta-up">✅ 111% of target</div>
+              <div class="kpi-sub">Target: 800</div>
+            </div>
+            <div class="kpi-card red">
+              <div class="kpi-label">Avg CPL</div>
+              <div class="kpi-value">₹1,263</div>
+              <div class="kpi-delta delta-down">⚠ Over by ₹263</div>
+              <div class="kpi-sub">Target CPL: ₹1,000</div>
+            </div>
+            <div class="kpi-card red">
+              <div class="kpi-label">CPB</div>
+              <div class="kpi-value">₹22,700</div>
+              <div class="kpi-delta delta-down">⚠ Over by ₹2,700</div>
+              <div class="kpi-sub">Target CPB: ₹20,000</div>
+            </div>
+            <div class="kpi-card purple">
+              <div class="kpi-label">QL → Booking Conv</div>
+              <div class="kpi-value">7.9%</div>
+              <div class="kpi-delta delta-down">⚠ Target: 9.2%</div>
+              <div class="kpi-sub">Gap: −1.3pp</div>
+            </div>
+          </div>
+
+          <!-- Charts row 1 -->
+          <div class="grid-2" style="margin-bottom:20px;">
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">Leads &amp; QL — Target vs Achieved</div>
+              </div>
+              <canvas id="tvLeads" height="180"></canvas>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">Bookings — Target vs Achieved</div>
+              </div>
+              <canvas id="tvBookings" height="180"></canvas>
+            </div>
+          </div>
+
+          <!-- Charts row 2 -->
+          <div class="grid-3" style="margin-bottom:20px;">
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">Spend — Budget vs Actual</div>
+              </div>
+              <canvas id="tvSpend" height="180"></canvas>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">CPQL — Target vs Actual by Project</div>
+              </div>
+              <canvas id="tvCPQL" height="180"></canvas>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">CPL — Target vs Actual by Project</div>
+              </div>
+              <canvas id="tvCPL" height="180"></canvas>
+            </div>
+          </div>
+
+          <!-- Project-wise Target vs Achieved Table — expanded with QL, CPQL, Spends -->
+          <div class="table-card" style="margin-bottom:16px;">
+            <div class="table-head">
+              <span class="table-title">Project-wise Target vs Achieved — Full View</span>
+            </div>
+            <table>
+              <thead><tr>
+                <th>Project</th><th>Region</th>
+                <th>Leads Tgt</th><th>Leads</th><th>L%</th>
+                <th>QL Tgt</th><th>QL</th><th>QL%</th>
+                <th>CPQL Tgt</th><th>CPQL</th>
+                <th>Bkg Tgt</th><th>Bkgs</th><th>B%</th>
+                <th>Budget</th><th>Spend</th><th>Spend%</th>
+                <th>CPL Tgt</th><th>CPL</th>
+                <th>Status</th>
+              </tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>Skyline Heights</strong></td><td>Mumbai</td>
+                  <td class="mono">1,100</td><td class="mono" style="color:var(--green)">1,240</td><td class="mono" style="color:var(--green)">113%</td>
+                  <td class="mono">770</td><td class="mono" style="color:var(--green)">868</td><td class="mono" style="color:var(--green)">113%</td>
+                  <td class="mono">₹1,500</td><td class="mono" style="color:var(--accent)">₹1,820</td>
+                  <td class="mono">80</td><td class="mono" style="color:var(--red)">72</td><td class="mono" style="color:var(--red)">90%</td>
+                  <td class="mono">₹16L</td><td class="mono">₹15.8L</td><td class="mono" style="color:var(--green)">99%</td>
+                  <td class="mono">₹1,000</td><td class="mono" style="color:var(--accent)">₹1,274</td>
+                  <td><span class="badge badge-yellow">Partial</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Marina Bay Villas</strong></td><td>Pune</td>
+                  <td class="mono">900</td><td class="mono" style="color:var(--green)">980</td><td class="mono" style="color:var(--green)">109%</td>
+                  <td class="mono">630</td><td class="mono" style="color:var(--green)">686</td><td class="mono" style="color:var(--green)">109%</td>
+                  <td class="mono">₹1,500</td><td class="mono" style="color:var(--green)">₹1,458</td>
+                  <td class="mono">65</td><td class="mono" style="color:var(--green)">62</td><td class="mono" style="color:var(--accent)">95%</td>
+                  <td class="mono">₹13L</td><td class="mono">₹12.4L</td><td class="mono" style="color:var(--green)">95%</td>
+                  <td class="mono">₹1,000</td><td class="mono" style="color:var(--green)">₹1,265</td>
+                  <td><span class="badge badge-green">On Track</span></td>
+                </tr>
+                <tr style="background:rgba(255,69,96,.05);outline:1px solid rgba(255,69,96,.2);">
+                  <td><strong style="color:var(--red)">Green Meadows 🚨</strong></td><td>Bangalore</td>
+                  <td class="mono">900</td><td class="mono" style="color:var(--red)">820</td><td class="mono" style="color:var(--red)">91%</td>
+                  <td class="mono">630</td><td class="mono" style="color:var(--red)">492</td><td class="mono" style="color:var(--red)">78%</td>
+                  <td class="mono">₹1,500</td><td class="mono" style="color:var(--red)">₹2,276</td>
+                  <td class="mono">55</td><td class="mono" style="color:var(--red)">38</td><td class="mono" style="color:var(--red)">69%</td>
+                  <td class="mono">₹12L</td><td class="mono">₹11.2L</td><td class="mono" style="color:var(--green)">93%</td>
+                  <td class="mono">₹1,000</td><td class="mono" style="color:var(--red)">₹1,366</td>
+                  <td><span class="badge badge-red">Need Attention</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Central Park Res.</strong></td><td>Hyderabad</td>
+                  <td class="mono">600</td><td class="mono" style="color:var(--green)">807</td><td class="mono" style="color:var(--green)">135%</td>
+                  <td class="mono">420</td><td class="mono" style="color:var(--green)">565</td><td class="mono" style="color:var(--green)">135%</td>
+                  <td class="mono">₹1,500</td><td class="mono" style="color:var(--green)">₹1,628</td>
+                  <td class="mono">40</td><td class="mono" style="color:var(--green)">42</td><td class="mono" style="color:var(--green)">105%</td>
+                  <td class="mono">₹9L</td><td class="mono">₹9.2L</td><td class="mono" style="color:var(--accent)">102%</td>
+                  <td class="mono">₹1,000</td><td class="mono" style="color:var(--green)">₹1,140</td>
+                  <td><span class="badge badge-green">On Track</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Progress bar section -->
+          <div class="chart-card" style="margin-top:0;">
+            <div class="chart-header">
+              <div class="chart-title">Overall KPI Achievement Tracker</div>
+              <div class="chart-meta">Apr 2025</div>
+            </div>
+            <div id="kpi-progress-bars" style="display:flex;flex-direction:column;gap:14px;padding:6px 0;"></div>
+          </div>
+        </div>
+
+      </div><!-- /dashboard -->
+
+      <!-- AI AGENT PANEL -->
+      <aside class="agent-panel">
+        <div class="agent-header">
+          <div class="agent-name">
+            <div class="agent-avatar">🧠</div>
+            ALEX — AI Advisor
+          </div>
+          <div class="agent-bio">30 years in Real Estate Performance Marketing. Ex-CMO at 3 top developers. Specialized in Google, Meta, programmatic, and CRM funnel optimization for residential & commercial projects.</div>
+          <div class="agent-tags">
+            <span class="agent-tag">Real Estate</span>
+            <span class="agent-tag">Google Ads</span>
+            <span class="agent-tag">Meta</span>
+            <span class="agent-tag">Funnel</span>
+            <span class="agent-tag">CPL Expert</span>
+          </div>
+        </div>
+        <div class="agent-messages" id="agent-messages">
+          <div class="msg ai">
+            <div class="msg-avatar ai">🧠</div>
+            <div>
+              <div class="msg-bubble">
+                Good morning! I've analyzed your April 2025 data. Here's my immediate read:<br><br>
+                <strong>⚠ 3 campaigns are burning budget</strong> — together they've spent ₹7.5L with only 57 leads (avg CPL ₹13,158). That's 4× your target CPL.
+                <div class="msg-highlight">
+                  💡 Pausing these 3 campaigns alone could save ₹7.5L/month and redirect budget to your top performers.
+                </div>
+                <div class="msg-highlight good">
+                  ✅ Your Marina Bay Search Brand campaign is a star — ₹778 CPL with high intent. I'd recommend 30% budget increase there.
+                </div>
+                Ask me anything about your campaigns, keywords, or funnel!
+              </div>
+              <div class="msg-time">AI Advisor · Just now</div>
+            </div>
+          </div>
+        </div>
+        <div class="agent-input-area">
+          <div class="quick-asks">
+            <span class="quick-ask" onclick="askAgent('Which campaigns should I pause immediately?')">💀 Pause candidates</span>
+            <span class="quick-ask" onclick="askAgent('How can I improve my lead to booking conversion rate?')">📈 Improve funnel</span>
+            <span class="quick-ask" onclick="askAgent('What keywords should I scale vs pause?')">🔑 Keyword strategy</span>
+            <span class="quick-ask" onclick="askAgent('Give me a budget reallocation strategy for next month')">💰 Budget realloc</span>
+            <span class="quick-ask" onclick="askAgent('Why is Green Meadows project underperforming?')">🌿 Green Meadows</span>
+          </div>
+          <div class="agent-input-wrap">
+            <textarea class="agent-textarea" id="agent-input" placeholder="Ask Alex anything about your campaigns..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
+            <button class="agent-send" onclick="sendMessage()" id="send-btn">➤</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const DATA = {
+  days: Array.from({length:30},(_,i)=>`Apr ${i+1}`),
+  spend: [1.2,1.4,1.1,1.6,1.8,1.5,1.3,2.0,1.9,1.7,2.1,2.4,1.8,2.2,1.6,1.9,2.0,2.3,1.8,2.5,2.1,1.9,2.4,2.8,2.2,2.0,2.6,2.4,2.1,2.3],
+  leads: [98,112,89,134,148,122,108,162,154,142,172,196,146,180,131,158,164,188,146,204,172,154,196,228,178,162,212,196,171,188],
+  googleSpend: [0.7,0.8,0.65,0.95,1.05,0.88,0.76,1.18,1.12,1.0,1.24,1.42,1.06,1.3,0.94,1.12,1.18,1.36,1.06,1.48,1.24,1.12,1.42,1.64,1.28,1.18,1.54,1.42,1.24,1.36],
+  googleConv: [60,68,54,81,90,74,66,98,93,86,104,118,88,108,79,94,98,114,88,124,104,94,118,137,106,98,128,118,104,114],
+  metaReach: [8.2,9.4,7.8,11.2,12.4,10.1,8.8,13.6,12.8,11.6,14.2,16.2,12.0,14.8,10.8,12.8,13.4,15.4,12.0,16.8,14.2,12.8,16.2,18.8,14.6,13.4,17.4,16.2,14.0,15.4],
+  metaLeads: [38,44,34,53,58,48,42,64,60,55,68,78,56,70,51,60,64,74,56,80,68,60,78,91,70,64,84,78,67,74],
+};
+
+// ============================================================
+// CHARTS
+// ============================================================
+Chart.defaults.color = '#4a5a72';
+Chart.defaults.borderColor = '#1f2d45';
+Chart.defaults.font.family = 'IBM Plex Mono';
+Chart.defaults.font.size = 10;
+
+const C = (id,cfg)=>{
+  const el = document.getElementById(id);
+  if(!el) return;
+  if(el._chart) el._chart.destroy();
+  el._chart = new Chart(el, cfg);
+  return el._chart;
+};
+
+function buildCharts(){
+  // Overview Trend
+  C('overviewTrend',{type:'line',data:{
+    labels:DATA.days,
+    datasets:[
+      {label:'Spend (L)',data:DATA.spend,borderColor:'#f5a623',backgroundColor:'rgba(245,166,35,.08)',borderWidth:2,fill:true,tension:.4,pointRadius:0},
+      {label:'Leads (×10)',data:DATA.leads.map(v=>v/10),borderColor:'#10d98a',backgroundColor:'rgba(16,217,138,.06)',borderWidth:2,fill:true,tension:.4,pointRadius:0,yAxisID:'y2'}
+    ]
+  },options:{scales:{x:{ticks:{maxTicksLimit:8}},y:{position:'left'},y2:{position:'right',grid:{display:false}}},plugins:{legend:{position:'top'}},interaction:{mode:'index'}}});
+
+  // Spend Pie
+  C('spendPie',{type:'doughnut',data:{
+    labels:['Google Search','Google PMax','Google Display','Meta FB','Meta IG'],
+    datasets:[{data:[28,22,8,42,18].map(v=>v*.1),backgroundColor:['#4285F4','#34A853','#EA4335','#1877F2','#E1306C'],borderWidth:0}]
+  },options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10}}},cutout:'65%'}});
+
+  // Project CPL
+  C('projectCPL',{type:'bar',data:{
+    labels:['Skyline Hts','Marina Bay','Green Mdws','Central Pk'],
+    datasets:[{label:'CPL (₹)',data:[1420,982,2840,1240],backgroundColor:['#4e9fff','#10d98a','#ff4560','#a78bfa'],borderRadius:4}]
+  },options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+
+  // Region Leads
+  C('regionLeads',{type:'bar',data:{
+    labels:['Mumbai','Pune','Bangalore','Hyderabad','Delhi NCR'],
+    datasets:[{label:'Leads',data:[1240,980,820,807,0],backgroundColor:'rgba(245,166,35,.7)',borderRadius:4}]
+  },options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+
+  // Google Trend
+  C('googleTrend',{type:'bar',data:{
+    labels:DATA.days.filter((_,i)=>i%3===0),
+    datasets:[
+      {label:'Spend (L)',data:DATA.googleSpend.filter((_,i)=>i%3===0),backgroundColor:'rgba(66,133,244,.6)',borderRadius:3,yAxisID:'y'},
+      {type:'line',label:'Conv',data:DATA.googleConv.filter((_,i)=>i%3===0),borderColor:'#10d98a',borderWidth:2,tension:.4,pointRadius:0,yAxisID:'y2'}
+    ]
+  },options:{scales:{y:{position:'left'},y2:{position:'right',grid:{display:false}}},plugins:{legend:{position:'top'}}}});
+
+  // Google Camp Type
+  C('googleCampType',{type:'pie',data:{
+    labels:['Search','PMax','Display','Video'],
+    datasets:[{data:[40,35,12,13],backgroundColor:['#4285F4','#34A853','#EA4335','#FBBC05'],borderWidth:0}]
+  },options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:8}}}}});
+
+  // Meta Trend
+  C('metaTrend',{type:'line',data:{
+    labels:DATA.days.filter((_,i)=>i%3===0),
+    datasets:[
+      {label:'Reach (L)',data:DATA.metaReach.filter((_,i)=>i%3===0),borderColor:'#1877F2',backgroundColor:'rgba(24,119,242,.08)',fill:true,tension:.4,pointRadius:0},
+      {label:'Leads',data:DATA.metaLeads.filter((_,i)=>i%3===0),borderColor:'#E1306C',backgroundColor:'rgba(225,48,108,.06)',fill:true,tension:.4,pointRadius:0,yAxisID:'y2'}
+    ]
+  },options:{scales:{x:{ticks:{maxTicksLimit:6}},y:{position:'left'},y2:{position:'right',grid:{display:false}}},plugins:{legend:{position:'top'}}}});
+
+  // Meta FB vs IG
+  C('metaSplit',{type:'doughnut',data:{
+    labels:['Facebook','Instagram'],
+    datasets:[{data:[58,42],backgroundColor:['#1877F2','#E1306C'],borderWidth:0}]
+  },options:{plugins:{legend:{position:'bottom',labels:{boxWidth:12,padding:10}}},cutout:'60%'}});
+
+  // Keyword Spend
+  C('kwSpend',{type:'bar',data:{
+    labels:['2bhk mumbai','luxury pune','affordable hyd','3bhk mumbai','marina bay','skyline brand','cp residences','green plots','real estate blr','buy flat blr'],
+    datasets:[{label:'Spend (₹K)',data:[420,390,280,320,280,218,310,160,180,142],backgroundColor:'rgba(245,166,35,.7)',borderRadius:3}]
+  },options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}});
+
+  // QS Distribution
+  C('kwQS',{type:'bar',data:{
+    labels:['1-3','4-5','6-7','8-9','10'],
+    datasets:[{label:'Keywords',data:[8,12,18,32,14],backgroundColor:['#ff4560','#ff8c42','#f5a623','#10d98a','#10d98a'],borderRadius:4}]
+  },options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+
+  // Ads CTR
+  C('adsCTR',{type:'bar',data:{
+    labels:['Video','RSA','Responsive Display','Carousel Meta','Lead Form Meta','Stories Meta'],
+    datasets:[{label:'CTR%',data:[3.0,4.2,0.8,2.3,2.1,1.3],backgroundColor:['#a78bfa','#4e9fff','#ff4560','#1877F2','#E1306C','#FF6B35'],borderRadius:4}]
+  },options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+
+  // Ads Leads
+  C('adsLeads',{type:'doughnut',data:{
+    labels:['RSA','PMax','Lead Form','Carousel','Video','Display'],
+    datasets:[{data:[456,712,290,310,380,24],backgroundColor:['#4e9fff','#10d98a','#E1306C','#1877F2','#a78bfa','#ff4560'],borderWidth:0}]
+  },options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:8}}},cutout:'55%'}});
+
+  // Funnel Dropoff
+  C('funnelDropoff',{type:'bar',data:{
+    labels:['Skyline Hts','Marina Bay','Green Mdws','Central Pk'],
+    datasets:[
+      {label:'Lead→Visit%',data:[25.2,25.3,20.0,20.8],backgroundColor:'rgba(78,159,255,.7)',borderRadius:3},
+      {label:'Visit→Book%',data:[23.1,25.0,23.2,25.0],backgroundColor:'rgba(16,217,138,.7)',borderRadius:3}
+    ]
+  },options:{plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true,max:30}}}});
+
+  // Lead Source
+  C('leadSource',{type:'doughnut',data:{
+    labels:['Google Search','PMax','Meta Lead Ads','Meta Carousel','Organic','Referral'],
+    datasets:[{data:[28,18,22,12,12,8],backgroundColor:['#4285F4','#34A853','#E1306C','#1877F2','#f5a623','#a78bfa'],borderWidth:0}]
+  },options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:8}}},cutout:'60%'}});
+
+  // Booking Trend
+  C('bookingTrend',{type:'line',data:{
+    labels:['Nov','Dec','Jan','Feb','Mar','Apr'],
+    datasets:[
+      {label:'Bookings',data:[142,168,158,186,204,214],borderColor:'#f5a623',backgroundColor:'rgba(245,166,35,.1)',fill:true,tension:.4,borderWidth:2},
+      {label:'Target',data:[160,160,180,180,200,200],borderColor:'#4a5a72',borderDash:[4,4],fill:false,tension:0,borderWidth:1.5,pointRadius:0}
+    ]
+  },options:{plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:false,min:120}}}});
+
+  // Build Funnel Viz
+  buildFunnel();
+  // Build Target vs Achieved
+  buildTargetCharts();
+}
+
+function buildFunnel(){
+  const stages = [
+    {name:'Total Leads',val:3847,color:'#4e9fff'},
+    {name:'Qualified',val:2698,color:'#a78bfa'},
+    {name:'Site Visit',val:892,color:'#f5a623'},
+    {name:'Negotiation',val:518,color:'#ff8c42'},
+    {name:'Booking',val:214,color:'#10d98a'},
+  ];
+  const max = stages[0].val;
+  const container = document.getElementById('funnel-viz');
+  container.innerHTML = '';
+  stages.forEach((s,i)=>{
+    const pct = i===0?100:Math.round(s.val/max*100);
+    const barH = Math.max(20, pct*1.6);
+    const width = Math.max(40,pct*0.8);
+    container.innerHTML += `
+      <div class="funnel-step">
+        <div class="funnel-bar-wrap">
+          <div class="funnel-bar" style="width:${width}%;height:${barH}px;background:${s.color};opacity:.85;"></div>
+        </div>
+        <div class="funnel-val">${s.val.toLocaleString()}</div>
+        <div class="funnel-label">${s.name}</div>
+        <div class="funnel-pct">${pct}%</div>
+      </div>
+      ${i<stages.length-1?'<div class="funnel-arrow">›</div>':''}
+    `;
+  });
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function switchTab(e, paneId){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById(paneId).classList.add('active');
+  setTimeout(buildCharts, 50);
+}
+
+function navClick(el, section){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  const tabMap = {overview:'tab-overview',google:'tab-google',meta:'tab-meta',keywords:'tab-keywords',adsreport:'tab-adsreport',funnel:'tab-funnel',projects:'tab-projects',target:'tab-target'};
+  const tabPaneId = tabMap[section];
+  if(tabPaneId){
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    document.getElementById(tabPaneId).classList.add('active');
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    const idx = {'tab-overview':0,'tab-google':1,'tab-meta':2,'tab-keywords':3,'tab-adsreport':4,'tab-funnel':5,'tab-target':6}[tabPaneId];
+    if(idx!==undefined) document.querySelectorAll('.tab')[idx]?.classList.add('active');
+    setTimeout(buildCharts,50);
+  }
+}
+
+// ============================================================
+// TABLE FILTER
+// ============================================================
+function filterTable(input, tableId){
+  const q = input.value.toLowerCase();
+  document.querySelectorAll(`#${tableId} tbody tr`).forEach(r=>{
+    r.style.display = r.innerText.toLowerCase().includes(q)?'':'none';
+  });
+}
+
+// ============================================================
+// AI AGENT
+// ============================================================
+const SYSTEM_PROMPT = `You are ALEX, a senior performance marketing advisor with 30 years of experience, specializing exclusively in Real Estate marketing across India. You have worked as CMO at 3 top real estate developers and managed campaigns for residential and commercial projects across Mumbai, Pune, Bangalore, Hyderabad, and Delhi NCR.
+
+Your expertise spans: Google Search, PMax, Display, YouTube Ads; Meta (Facebook/Instagram) Lead Ads, Carousel, Video; CRM funnel optimization; keyword strategy; budget allocation; and ROI analysis.
+
+CURRENT DASHBOARD DATA (April 2025):
+- Total Spend: ₹48.6L (Google ₹29.1L, Meta ₹19.5L)
+- Total Leads: 3,847 | Avg CPL: ₹1,263 | Target CPL: ₹2,000
+- Total Clicks: 1,84,320 | Avg CPC: ₹26.4
+- Site Visits: 892 | Bookings: 214 | CPB: ₹22,700
+
+LOSS-MAKING CAMPAIGNS (CPL > ₹12,000, 0 bookings):
+1. Skyline Heights Brand Awareness (Meta) — Spend ₹3.2L, 26 leads, CPL ₹12,308
+2. Green Meadows Retargeting (Meta) — Spend ₹1.8L, 14 leads, CPL ₹12,857
+3. Skyline Heights Search Branded (Google) — Spend ₹4.82L, 38 leads, CPL ₹12,684
+4. Marina Bay Broad Match (Meta) — Spend ₹2.4L, 19 leads, CPL ₹12,632
+
+TOP PERFORMERS:
+- Marina Bay Search Brand: CPL ₹778, CTR 4.2%
+- Central Park RSA: CPL ₹982, CTR 4.2%
+- Marina Bay Lead Gen Meta: CPL ₹1,035
+
+PROJECTS:
+- Skyline Heights (Mumbai): 1,240 leads, 72 bookings, 5.8% conv
+- Marina Bay Villas (Pune): 980 leads, 62 bookings, 6.3% conv
+- Green Meadows (Bangalore): 820 leads, 38 bookings, 4.6% conv (underperforming)
+- Central Park Residences (Hyderabad): 807 leads, 42 bookings, 5.2% conv
+
+KEYWORDS — Pause candidates (Low QS, poor CPL):
+- "real estate investment bangalore" (Broad, QS 3/10, CPL very high)
+- "villa plots near delhi" (Broad, QS 4/10, CPL high)
+- "buy flat in bangalore cheap" (Broad, QS 2/10)
+
+Scale candidates: "2 bhk flats mumbai" (Exact, QS 9/10), "marina bay villas pune" (Exact, QS 9/10)
+
+You respond as a confident, direct, experienced advisor. Use specific numbers from the data. Be actionable. Use short paragraphs. Occasionally use emojis for emphasis. Highlight risks in bold. Give numbered action plans when relevant. Keep responses concise (under 250 words).`;
+
+async function sendMessage(){
+  const input = document.getElementById('agent-input');
+  const msg = input.value.trim();
+  if(!msg) return;
+  input.value = '';
+  addMsg('user', msg);
+  showTyping();
+  document.getElementById('send-btn').disabled = true;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system: SYSTEM_PROMPT,
+        messages:[{role:'user',content:msg}]
+      })
+    });
+    const data = await res.json();
+    removeTyping();
+    const reply = data.content?.map(b=>b.text||'').join('') || 'Sorry, I could not process that.';
+    addMsg('ai', formatReply(reply));
+  } catch(e) {
+    removeTyping();
+    addMsg('ai','⚠ Could not connect to AI. Please check your API setup.');
+  }
+  document.getElementById('send-btn').disabled = false;
+}
+
+function formatReply(text){
+  return text
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\n\n/g,'<br><br>')
+    .replace(/\n/g,'<br>')
+    .replace(/(\d+\.\s)/g,'<br>$1');
+}
+
+function askAgent(q){
+  document.getElementById('agent-input').value = q;
+  sendMessage();
+}
+
+function addMsg(role, html){
+  const msgs = document.getElementById('agent-messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const avatar = role==='ai'?'🧠':'👤';
+  const avatarClass = role==='ai'?'ai':'usr';
+  div.innerHTML = `
+    <div class="msg-avatar ${avatarClass}">${avatar}</div>
+    <div>
+      <div class="msg-bubble">${html}</div>
+      <div class="msg-time">
+        ${role==='ai'?'AI Advisor':'You'} · just now
+      </div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping(){
+  const msgs = document.getElementById('agent-messages');
+  const div = document.createElement('div');
+  div.className = 'msg ai'; div.id='typing-indicator';
+  div.innerHTML = `<div class="msg-avatar ai">🧠</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+function removeTyping(){
+  document.getElementById('typing-indicator')?.remove();
+}
+
+// ============================================================
+// UPDATE DASHBOARD (filters)
+// ============================================================
+function updateDashboard(){
+  // In production: re-fetch filtered data. Here we just re-render.
+  buildCharts();
+}
+
+// ============================================================
+// GLOBAL SEARCH DATA INDEX
+// ============================================================
+const SEARCH_INDEX = [
+
+  // ══════════════════════════════════════════════════
+  // GOOGLE — Campaign > Ad Group > Ad > Keyword
+  // ══════════════════════════════════════════════════
+
+  // ── GOOGLE CAMPAIGNS ──
+  {id:'GC-10021', type:'Campaign', platform:'Google', project:'Skyline Heights',  region:'Mumbai',    campName:'Skyline Heights — Search Branded',   campType:'Search',   status:'Need Attention', tab:'tab-google',    spend:'₹4,82,000', cpl:'₹12,684', name:'Skyline Heights — Search Branded'},
+  {id:'GC-10022', type:'Campaign', platform:'Google', project:'Marina Bay Villas',region:'Pune',      campName:'Marina Bay — PMax',                   campType:'PMax',     status:'On Track',       tab:'tab-google',    spend:'₹3,90,000', cpl:'₹1,250',  name:'Marina Bay — PMax'},
+  {id:'GC-10023', type:'Campaign', platform:'Google', project:'Green Meadows',    region:'Bangalore', campName:'Green Meadows — Display',              campType:'Display',  status:'Need Attention', tab:'tab-google',    spend:'₹2,10,000', cpl:'₹12,353', name:'Green Meadows — Display'},
+  {id:'GC-10024', type:'Campaign', platform:'Google', project:'Central Park',     region:'Hyderabad', campName:'Central Park — Search NonBrand',       campType:'Search',   status:'On Track',       tab:'tab-google',    spend:'₹5,60,000', cpl:'₹1,167',  name:'Central Park — Search NonBrand'},
+  {id:'GC-10025', type:'Campaign', platform:'Google', project:'Skyline Heights',  region:'Mumbai',    campName:'Skyline Heights — PMax',               campType:'PMax',     status:'On Track',       tab:'tab-google',    spend:'₹6,20,000', cpl:'₹1,000',  name:'Skyline Heights — PMax'},
+  {id:'GC-10026', type:'Campaign', platform:'Google', project:'Marina Bay Villas',region:'Pune',      campName:'Marina Bay — Search Brand',            campType:'Search',   status:'On Track',       tab:'tab-google',    spend:'₹2,80,000', cpl:'₹778',    name:'Marina Bay — Search Brand'},
+  {id:'GC-10027', type:'Campaign', platform:'Google', project:'Green Meadows',    region:'Bangalore', campName:'Green Meadows — PMax',                 campType:'PMax',     status:'Review',         tab:'tab-google',    spend:'₹3,40,000', cpl:'₹1,214',  name:'Green Meadows — PMax'},
+
+  // ── GOOGLE AD GROUPS ──
+  {id:'AG-5001', type:'Ad Group', platform:'Google', project:'Skyline Heights',  region:'Mumbai',    campId:'GC-10021', campName:'Skyline Heights — Search Branded', adGroupName:'Skyline 2BHK Mumbai Exact',        campType:'Search',  status:'On Track',       tab:'tab-google',    spend:'₹1,82,000', cpl:'₹9,800',  name:'Skyline 2BHK Mumbai Exact'},
+  {id:'AG-5002', type:'Ad Group', platform:'Google', project:'Skyline Heights',  region:'Mumbai',    campId:'GC-10021', campName:'Skyline Heights — Search Branded', adGroupName:'Skyline 3BHK Mumbai Exact',        campType:'Search',  status:'On Track',       tab:'tab-google',    spend:'₹1,60,000', cpl:'₹10,200', name:'Skyline 3BHK Mumbai Exact'},
+  {id:'AG-5003', type:'Ad Group', platform:'Google', project:'Skyline Heights',  region:'Mumbai',    campId:'GC-10021', campName:'Skyline Heights — Search Branded', adGroupName:'Skyline Brand Terms',              campType:'Search',  status:'Need Attention', tab:'tab-google',    spend:'₹1,40,000', cpl:'₹18,200', name:'Skyline Brand Terms'},
+  {id:'AG-5004', type:'Ad Group', platform:'Google', project:'Marina Bay Villas',region:'Pune',      campId:'GC-10026', campName:'Marina Bay — Search Brand',        adGroupName:'Marina Bay 3BHK Exact',            campType:'Search',  status:'On Track',       tab:'tab-google',    spend:'₹1,20,000', cpl:'₹750',    name:'Marina Bay 3BHK Exact'},
+  {id:'AG-5005', type:'Ad Group', platform:'Google', project:'Marina Bay Villas',region:'Pune',      campId:'GC-10026', campName:'Marina Bay — Search Brand',        adGroupName:'Marina Bay Luxury Villas Phrase',  campType:'Search',  status:'On Track',       tab:'tab-google',    spend:'₹1,60,000', cpl:'₹810',    name:'Marina Bay Luxury Villas Phrase'},
+  {id:'AG-5006', type:'Ad Group', platform:'Google', project:'Green Meadows',    region:'Bangalore', campId:'GC-10023', campName:'Green Meadows — Display',          adGroupName:'GM Display Retarget Visitors',     campType:'Display', status:'Need Attention', tab:'tab-google',    spend:'₹1,10,000', cpl:'₹11,000', name:'GM Display Retarget Visitors'},
+  {id:'AG-5007', type:'Ad Group', platform:'Google', project:'Green Meadows',    region:'Bangalore', campId:'GC-10023', campName:'Green Meadows — Display',          adGroupName:'GM Display Prospecting',           campType:'Display', status:'Review',         tab:'tab-google',    spend:'₹1,00,000', cpl:'₹13,500', name:'GM Display Prospecting'},
+  {id:'AG-5008', type:'Ad Group', platform:'Google', project:'Central Park',     region:'Hyderabad', campId:'GC-10024', campName:'Central Park — Search NonBrand',   adGroupName:'Central Park Affordable Homes',    campType:'Search',  status:'On Track',       tab:'tab-google',    spend:'₹2,10,000', cpl:'₹1,100',  name:'Central Park Affordable Homes'},
+  {id:'AG-5009', type:'Ad Group', platform:'Google', project:'Central Park',     region:'Hyderabad', campId:'GC-10024', campName:'Central Park — Search NonBrand',   adGroupName:'Central Park Plot + Villa',        campType:'Search',  status:'On Track',       tab:'tab-google',    spend:'₹1,80,000', cpl:'₹1,240',  name:'Central Park Plot + Villa'},
+  {id:'AG-5010', type:'Ad Group', platform:'Google', project:'Skyline Heights',  region:'Mumbai',    campId:'GC-10025', campName:'Skyline Heights — PMax',           adGroupName:'Skyline PMax Asset Group 1',       campType:'PMax',    status:'On Track',       tab:'tab-google',    spend:'₹3,10,000', cpl:'₹980',    name:'Skyline PMax Asset Group 1'},
+  {id:'AG-5011', type:'Ad Group', platform:'Google', project:'Marina Bay Villas',region:'Pune',      campId:'GC-10022', campName:'Marina Bay — PMax',                adGroupName:'Marina Bay PMax Listing Group',    campType:'PMax',    status:'On Track',       tab:'tab-google',    spend:'₹3,90,000', cpl:'₹1,250',  name:'Marina Bay PMax Listing Group'},
+
+  // ── GOOGLE ADS ──
+  {id:'AD-30041', type:'Ad', platform:'Google', project:'Skyline Heights',  region:'Mumbai',    campId:'GC-10021', campName:'Skyline Heights — Search Branded', adGroupId:'AG-5001', adGroupName:'Skyline 2BHK Mumbai Exact',      adName:'RSA — Skyline 2BHK Best Price',      campType:'RSA',     status:'On Track',       tab:'tab-adsreport', spend:'₹–', cpl:'₹9,800',  name:'RSA — Skyline 2BHK Best Price'},
+  {id:'AD-30042', type:'Ad', platform:'Google', project:'Skyline Heights',  region:'Mumbai',    campId:'GC-10021', campName:'Skyline Heights — Search Branded', adGroupId:'AG-5002', adGroupName:'Skyline 3BHK Mumbai Exact',      adName:'RSA — Skyline 3BHK Ready Possession',campType:'RSA',     status:'On Track',       tab:'tab-adsreport', spend:'₹–', cpl:'₹10,200', name:'RSA — Skyline 3BHK Ready Possession'},
+  {id:'AD-30043', type:'Ad', platform:'Google', project:'Skyline Heights',  region:'Mumbai',    campId:'GC-10025', campName:'Skyline Heights — PMax',           adGroupId:'AG-5010', adGroupName:'Skyline PMax Asset Group 1',     adName:'PMax — Dream Home Video 30s',        campType:'Video',   status:'On Track',       tab:'tab-adsreport', spend:'₹–', cpl:'₹1,100',  name:'PMax — Dream Home Video 30s'},
+  {id:'AD-30044', type:'Ad', platform:'Google', project:'Marina Bay Villas',region:'Pune',      campId:'GC-10026', campName:'Marina Bay — Search Brand',        adGroupId:'AG-5004', adGroupName:'Marina Bay 3BHK Exact',          adName:'RSA — Marina Bay Sea View 3BHK',     campType:'RSA',     status:'On Track',       tab:'tab-adsreport', spend:'₹–', cpl:'₹750',    name:'RSA — Marina Bay Sea View 3BHK'},
+  {id:'AD-30045', type:'Ad', platform:'Google', project:'Marina Bay Villas',region:'Pune',      campId:'GC-10022', campName:'Marina Bay — PMax',                adGroupId:'AG-5011', adGroupName:'Marina Bay PMax Listing Group',  adName:'PMax — Marina Bay Lifestyle Banner', campType:'Display', status:'On Track',       tab:'tab-adsreport', spend:'₹–', cpl:'₹1,290',  name:'PMax — Marina Bay Lifestyle Banner'},
+  {id:'AD-30046', type:'Ad', platform:'Google', project:'Green Meadows',    region:'Bangalore', campId:'GC-10023', campName:'Green Meadows — Display',          adGroupId:'AG-5006', adGroupName:'GM Display Retarget Visitors',   adName:'Display — GM Static Banner 300x250', campType:'Display', status:'Need Attention',  tab:'tab-adsreport', spend:'₹–', cpl:'₹7,500',  name:'Display — GM Static Banner 300x250'},
+  {id:'AD-30047', type:'Ad', platform:'Google', project:'Green Meadows',    region:'Bangalore', campId:'GC-10023', campName:'Green Meadows — Display',          adGroupId:'AG-5007', adGroupName:'GM Display Prospecting',         adName:'Display — GM Animated Banner 728x90',campType:'Display', status:'Review',         tab:'tab-adsreport', spend:'₹–', cpl:'₹8,200',  name:'Display — GM Animated Banner 728x90'},
+  {id:'AD-30048', type:'Ad', platform:'Google', project:'Central Park',     region:'Hyderabad', campId:'GC-10024', campName:'Central Park — Search NonBrand',   adGroupId:'AG-5008', adGroupName:'Central Park Affordable Homes',  adName:'RSA — Central Park Book Now CTA',    campType:'RSA',     status:'On Track',       tab:'tab-adsreport', spend:'₹–', cpl:'₹982',    name:'RSA — Central Park Book Now CTA'},
+  {id:'AD-30049', type:'Ad', platform:'Google', project:'Central Park',     region:'Hyderabad', campId:'GC-10024', campName:'Central Park — Search NonBrand',   adGroupId:'AG-5009', adGroupName:'Central Park Plot + Villa',      adName:'RSA — CP Gated Community Offer',     campType:'RSA',     status:'On Track',       tab:'tab-adsreport', spend:'₹–', cpl:'₹1,060',  name:'RSA — CP Gated Community Offer'},
+
+  // ── GOOGLE KEYWORDS ──
+  {id:'KW-40051', type:'Keyword', platform:'Google', project:'Skyline Heights',  region:'Mumbai',    campId:'GC-10021', campName:'Skyline Heights — Search Branded', adGroupId:'AG-5001', adGroupName:'Skyline 2BHK Mumbai Exact',     name:'2 bhk flats mumbai',                campType:'Search', matchType:'Exact',  status:'Scale', tab:'tab-keywords', spend:'₹–', cpl:'₹–'},
+  {id:'KW-40052', type:'Keyword', platform:'Google', project:'Skyline Heights',  region:'Mumbai',    campId:'GC-10021', campName:'Skyline Heights — Search Branded', adGroupId:'AG-5002', adGroupName:'Skyline 3BHK Mumbai Exact',     name:'3 bhk flats mumbai',                campType:'Search', matchType:'Exact',  status:'Scale', tab:'tab-keywords', spend:'₹–', cpl:'₹–'},
+  {id:'KW-40053', type:'Keyword', platform:'Google', project:'Skyline Heights',  region:'Mumbai',    campId:'GC-10021', campName:'Skyline Heights — Search Branded', adGroupId:'AG-5003', adGroupName:'Skyline Brand Terms',           name:'skyline heights mumbai',            campType:'Search', matchType:'Exact',  status:'On Track', tab:'tab-keywords', spend:'₹–', cpl:'₹–'},
+  {id:'KW-40054', type:'Keyword', platform:'Google', project:'Marina Bay Villas',region:'Pune',      campId:'GC-10026', campName:'Marina Bay — Search Brand',        adGroupId:'AG-5004', adGroupName:'Marina Bay 3BHK Exact',         name:'marina bay villas pune',            campType:'Search', matchType:'Exact',  status:'Scale', tab:'tab-keywords', spend:'₹–', cpl:'₹–'},
+  {id:'KW-40055', type:'Keyword', platform:'Google', project:'Marina Bay Villas',region:'Pune',      campId:'GC-10026', campName:'Marina Bay — Search Brand',        adGroupId:'AG-5005', adGroupName:'Marina Bay Luxury Villas Phrase',name:'luxury apartments pune',           campType:'Search', matchType:'Phrase', status:'Scale', tab:'tab-keywords', spend:'₹–', cpl:'₹–'},
+  {id:'KW-40056', type:'Keyword', platform:'Google', project:'Green Meadows',    region:'Bangalore', campId:'GC-10024', campName:'Central Park — Search NonBrand',   adGroupId:'AG-5008', adGroupName:'Central Park Affordable Homes', name:'affordable homes hyderabad',         campType:'Search', matchType:'Phrase', status:'Scale', tab:'tab-keywords', spend:'₹–', cpl:'₹–'},
+  {id:'KW-40057', type:'Keyword', platform:'Google', project:'Green Meadows',    region:'Bangalore', campId:'GC-10023', campName:'Green Meadows — Display',          adGroupId:'AG-5006', adGroupName:'GM Display Retarget Visitors',  name:'real estate investment bangalore',   campType:'Search', matchType:'Broad',  status:'Pause', tab:'tab-keywords', spend:'₹–', cpl:'₹–'},
+  {id:'KW-40058', type:'Keyword', platform:'Google', project:'Skyline Heights',  region:'Delhi NCR', campId:'GC-10024', campName:'Central Park — Search NonBrand',   adGroupId:'AG-5009', adGroupName:'Central Park Plot + Villa',     name:'villa plots near delhi',            campType:'Search', matchType:'Broad',  status:'Pause', tab:'tab-keywords', spend:'₹–', cpl:'₹–'},
+  {id:'KW-40059', type:'Keyword', platform:'Google', project:'Green Meadows',    region:'Bangalore', campId:'GC-10023', campName:'Green Meadows — Display',          adGroupId:'AG-5007', adGroupName:'GM Display Prospecting',        name:'buy flat in bangalore cheap',       campType:'Search', matchType:'Broad',  status:'Pause', tab:'tab-keywords', spend:'₹–', cpl:'₹–'},
+
+  // ══════════════════════════════════════════════════
+  // META — Campaign > Ad Set > Ad
+  // ══════════════════════════════════════════════════
+
+  // ── META CAMPAIGNS ──
+  {id:'MC-20031', type:'Campaign', platform:'Meta', project:'Skyline Heights',  region:'Mumbai',    campName:'Skyline Brand Awareness',    campType:'Awareness', objective:'Awareness',  status:'Need Attention', tab:'tab-meta', spend:'₹3,20,000', cpl:'₹12,308', name:'Skyline Brand Awareness'},
+  {id:'MC-20032', type:'Campaign', platform:'Meta', project:'Marina Bay Villas',region:'Pune',      campName:'Marina Bay — Lead Gen',      campType:'Lead Gen',  objective:'Lead Gen',   status:'On Track',       tab:'tab-meta', spend:'₹4,10,000', cpl:'₹1,035',  name:'Marina Bay — Lead Gen'},
+  {id:'MC-20033', type:'Campaign', platform:'Meta', project:'Green Meadows',    region:'Bangalore', campName:'Green Meadows Retargeting',  campType:'Retarget',  objective:'Conversions',status:'Need Attention', tab:'tab-meta', spend:'₹1,80,000', cpl:'₹12,857', name:'Green Meadows Retargeting'},
+  {id:'MC-20034', type:'Campaign', platform:'Meta', project:'Central Park',     region:'Hyderabad', campName:'Central Park — Carousel',    campType:'Carousel',  objective:'Traffic',    status:'On Track',       tab:'tab-meta', spend:'₹2,90,000', cpl:'₹935',    name:'Central Park — Carousel'},
+  {id:'MC-20035', type:'Campaign', platform:'Meta', project:'Skyline Heights',  region:'Mumbai',    campName:'Skyline — Video Leads',      campType:'Lead Gen',  objective:'Lead Gen',   status:'On Track',       tab:'tab-meta', spend:'₹3,60,000', cpl:'₹1,125',  name:'Skyline — Video Leads'},
+  {id:'MC-20036', type:'Campaign', platform:'Meta', project:'Marina Bay Villas',region:'Pune',      campName:'Marina Bay Broad Match',     campType:'Traffic',   objective:'Traffic',    status:'Need Attention', tab:'tab-meta', spend:'₹2,40,000', cpl:'₹12,632', name:'Marina Bay Broad Match'},
+
+  // ── META AD SETS ──
+  {id:'AS-6001', type:'Ad Set', platform:'Meta', project:'Skyline Heights',  region:'Mumbai',    campId:'MC-20031', campName:'Skyline Brand Awareness',   adSetName:'Skyline — Mumbai 25-45 Lookalike',         audience:'Lookalike',  placement:'Feed+Stories', campType:'Awareness', status:'Need Attention', tab:'tab-meta', spend:'₹1,60,000', cpl:'₹14,200', name:'Skyline — Mumbai 25-45 Lookalike'},
+  {id:'AS-6002', type:'Ad Set', platform:'Meta', project:'Skyline Heights',  region:'Mumbai',    campId:'MC-20031', campName:'Skyline Brand Awareness',   adSetName:'Skyline — Mumbai Interest Targeting',      audience:'Interest',   placement:'Feed',         campType:'Awareness', status:'Review',         tab:'tab-meta', spend:'₹1,60,000', cpl:'₹10,400', name:'Skyline — Mumbai Interest Targeting'},
+  {id:'AS-6003', type:'Ad Set', platform:'Meta', project:'Marina Bay Villas',region:'Pune',      campId:'MC-20032', campName:'Marina Bay — Lead Gen',     adSetName:'Marina Bay — Pune 30-50 HNI',              audience:'HNI',        placement:'Feed',         campType:'Lead Gen',  status:'On Track',       tab:'tab-meta', spend:'₹2,20,000', cpl:'₹940',    name:'Marina Bay — Pune 30-50 HNI'},
+  {id:'AS-6004', type:'Ad Set', platform:'Meta', project:'Marina Bay Villas',region:'Pune',      campId:'MC-20032', campName:'Marina Bay — Lead Gen',     adSetName:'Marina Bay — Lookalike 2% Buyers',         audience:'Lookalike',  placement:'Feed+Reels',   campType:'Lead Gen',  status:'On Track',       tab:'tab-meta', spend:'₹1,90,000', cpl:'₹1,140',  name:'Marina Bay — Lookalike 2% Buyers'},
+  {id:'AS-6005', type:'Ad Set', platform:'Meta', project:'Green Meadows',    region:'Bangalore', campId:'MC-20033', campName:'Green Meadows Retargeting', adSetName:'GM — Website Visitors 30D Retarget',       audience:'Retarget',   placement:'Feed',         campType:'Retarget',  status:'Need Attention', tab:'tab-meta', spend:'₹1,00,000', cpl:'₹14,300', name:'GM — Website Visitors 30D Retarget'},
+  {id:'AS-6006', type:'Ad Set', platform:'Meta', project:'Green Meadows',    region:'Bangalore', campId:'MC-20033', campName:'Green Meadows Retargeting', adSetName:'GM — Video Viewers 50% Retarget',          audience:'Retarget',   placement:'Stories',      campType:'Retarget',  status:'Review',         tab:'tab-meta', spend:'₹80,000',  cpl:'₹11,200', name:'GM — Video Viewers 50% Retarget'},
+  {id:'AS-6007', type:'Ad Set', platform:'Meta', project:'Central Park',     region:'Hyderabad', campId:'MC-20034', campName:'Central Park — Carousel',   adSetName:'CP — Hyderabad 28-50 Interest RE',         audience:'Interest',   placement:'Feed',         campType:'Carousel',  status:'On Track',       tab:'tab-meta', spend:'₹1,50,000', cpl:'₹900',    name:'CP — Hyderabad 28-50 Interest RE'},
+  {id:'AS-6008', type:'Ad Set', platform:'Meta', project:'Central Park',     region:'Hyderabad', campId:'MC-20034', campName:'Central Park — Carousel',   adSetName:'CP — Broad Audience Hyderabad',            audience:'Broad',      placement:'Feed+Stories', campType:'Carousel',  status:'Review',         tab:'tab-meta', spend:'₹1,40,000', cpl:'₹975',    name:'CP — Broad Audience Hyderabad'},
+  {id:'AS-6009', type:'Ad Set', platform:'Meta', project:'Skyline Heights',  region:'Mumbai',    campId:'MC-20035', campName:'Skyline — Video Leads',     adSetName:'Skyline Video — Mumbai HNI Lookalike',     audience:'Lookalike',  placement:'Reels+Feed',   campType:'Lead Gen',  status:'On Track',       tab:'tab-meta', spend:'₹1,80,000', cpl:'₹1,050',  name:'Skyline Video — Mumbai HNI Lookalike'},
+  {id:'AS-6010', type:'Ad Set', platform:'Meta', project:'Skyline Heights',  region:'Mumbai',    campId:'MC-20035', campName:'Skyline — Video Leads',     adSetName:'Skyline Video — Interest Real Estate',     audience:'Interest',   placement:'Feed',         campType:'Lead Gen',  status:'On Track',       tab:'tab-meta', spend:'₹1,80,000', cpl:'₹1,200',  name:'Skyline Video — Interest Real Estate'},
+  {id:'AS-6011', type:'Ad Set', platform:'Meta', project:'Marina Bay Villas',region:'Pune',      campId:'MC-20036', campName:'Marina Bay Broad Match',    adSetName:'Marina Bay Broad — Pune All Adults',       audience:'Broad',      placement:'Feed',         campType:'Traffic',   status:'Need Attention', tab:'tab-meta', spend:'₹1,40,000', cpl:'₹13,800', name:'Marina Bay Broad — Pune All Adults'},
+  {id:'AS-6012', type:'Ad Set', platform:'Meta', project:'Marina Bay Villas',region:'Pune',      campId:'MC-20036', campName:'Marina Bay Broad Match',    adSetName:'Marina Bay Broad — Automated Placement',   audience:'Broad',      placement:'Automatic',    campType:'Traffic',   status:'Need Attention', tab:'tab-meta', spend:'₹1,00,000', cpl:'₹11,000', name:'Marina Bay Broad — Automated Placement'},
+
+  // ── META ADS ──
+  {id:'AD-40061', type:'Ad', platform:'Meta', project:'Skyline Heights',  region:'Mumbai',    campId:'MC-20031', campName:'Skyline Brand Awareness',   adSetId:'AS-6001', adSetName:'Skyline — Mumbai 25-45 Lookalike',   adName:'Skyline Video 15s — Brand Recall',      campType:'Video',    placement:'Feed+Stories', status:'Need Attention', tab:'tab-adsreport', spend:'₹–', cpl:'₹14,200', name:'Skyline Video 15s — Brand Recall'},
+  {id:'AD-40062', type:'Ad', platform:'Meta', project:'Skyline Heights',  region:'Mumbai',    campId:'MC-20031', campName:'Skyline Brand Awareness',   adSetId:'AS-6002', adSetName:'Skyline — Mumbai Interest Targeting', adName:'Skyline Static Image — 2BHK CTA',       campType:'Image',    placement:'Feed',         status:'Review',         tab:'tab-adsreport', spend:'₹–', cpl:'₹10,400', name:'Skyline Static Image — 2BHK CTA'},
+  {id:'AD-40063', type:'Ad', platform:'Meta', project:'Marina Bay Villas',region:'Pune',      campId:'MC-20032', campName:'Marina Bay — Lead Gen',     adSetId:'AS-6003', adSetName:'Marina Bay — Pune 30-50 HNI',        adName:'Marina Bay Lead Form — 3BHK Views',     campType:'Lead Ad',  placement:'Feed',         status:'On Track',       tab:'tab-adsreport', spend:'₹–', cpl:'₹940',    name:'Marina Bay Lead Form — 3BHK Views'},
+  {id:'AD-40064', type:'Ad', platform:'Meta', project:'Marina Bay Villas',region:'Pune',      campId:'MC-20032', campName:'Marina Bay — Lead Gen',     adSetId:'AS-6004', adSetName:'Marina Bay — Lookalike 2% Buyers',   adName:'Marina Bay Carousel — 3BHK Views',      campType:'Carousel', placement:'Feed+Reels',   status:'On Track',       tab:'tab-adsreport', spend:'₹–', cpl:'₹1,290',  name:'Marina Bay Carousel — 3BHK Views'},
+  {id:'AD-40065', type:'Ad', platform:'Meta', project:'Green Meadows',    region:'Bangalore', campId:'MC-20033', campName:'Green Meadows Retargeting', adSetId:'AS-6005', adSetName:'GM — Website Visitors 30D Retarget',  adName:'GM Retarget — Dynamic Catalogue Ad',    campType:'Catalogue',placement:'Feed',         status:'Need Attention', tab:'tab-adsreport', spend:'₹–', cpl:'₹14,300', name:'GM Retarget — Dynamic Catalogue Ad'},
+  {id:'AD-40066', type:'Ad', platform:'Meta', project:'Green Meadows',    region:'Bangalore', campId:'MC-20033', campName:'Green Meadows Retargeting', adSetId:'AS-6006', adSetName:'GM — Video Viewers 50% Retarget',     adName:'GM Stories — Offer Countdown',          campType:'Stories',  placement:'Stories',      status:'Review',         tab:'tab-adsreport', spend:'₹–', cpl:'₹11,200', name:'GM Stories — Offer Countdown'},
+  {id:'AD-40067', type:'Ad', platform:'Meta', project:'Central Park',     region:'Hyderabad', campId:'MC-20034', campName:'Central Park — Carousel',   adSetId:'AS-6007', adSetName:'CP — Hyderabad 28-50 Interest RE',    adName:'CP Carousel — 4 Property Highlights',   campType:'Carousel', placement:'Feed',         status:'On Track',       tab:'tab-adsreport', spend:'₹–', cpl:'₹900',    name:'CP Carousel — 4 Property Highlights'},
+  {id:'AD-40068', type:'Ad', platform:'Meta', project:'Central Park',     region:'Hyderabad', campId:'MC-20034', campName:'Central Park — Carousel',   adSetId:'AS-6008', adSetName:'CP — Broad Audience Hyderabad',       adName:'CP Image — Gated Community Lifestyle',  campType:'Image',    placement:'Feed+Stories', status:'Review',         tab:'tab-adsreport', spend:'₹–', cpl:'₹975',    name:'CP Image — Gated Community Lifestyle'},
+  {id:'AD-40069', type:'Ad', platform:'Meta', project:'Skyline Heights',  region:'Mumbai',    campId:'MC-20035', campName:'Skyline — Video Leads',     adSetId:'AS-6009', adSetName:'Skyline Video — Mumbai HNI Lookalike', adName:'Skyline Lead Form — 2BHK Special Offer', campType:'Lead Ad', placement:'Reels+Feed',   status:'On Track',       tab:'tab-adsreport', spend:'₹–', cpl:'₹1,050',  name:'Skyline Lead Form — 2BHK Special Offer'},
+  {id:'AD-40070', type:'Ad', platform:'Meta', project:'Skyline Heights',  region:'Mumbai',    campId:'MC-20035', campName:'Skyline — Video Leads',     adSetId:'AS-6010', adSetName:'Skyline Video — Interest Real Estate', adName:'Skyline Video 30s — Dream Home Tour',   campType:'Video',    placement:'Feed',         status:'On Track',       tab:'tab-adsreport', spend:'₹–', cpl:'₹1,200',  name:'Skyline Video 30s — Dream Home Tour'},
+  {id:'AD-40071', type:'Ad', platform:'Meta', project:'Marina Bay Villas',region:'Pune',      campId:'MC-20036', campName:'Marina Bay Broad Match',    adSetId:'AS-6011', adSetName:'Marina Bay Broad — Pune All Adults',  adName:'Marina Bay Stories — Luxury Life',      campType:'Stories',  placement:'Stories',      status:'Need Attention', tab:'tab-adsreport', spend:'₹–', cpl:'₹13,800', name:'Marina Bay Stories — Luxury Life'},
+  {id:'AD-40072', type:'Ad', platform:'Meta', project:'Marina Bay Villas',region:'Pune',      campId:'MC-20036', campName:'Marina Bay Broad Match',    adSetId:'AS-6012', adSetName:'Marina Bay Broad — Automated Placement',adName:'Marina Bay Image — Sea View Banner',   campType:'Image',    placement:'Automatic',    status:'Need Attention', tab:'tab-adsreport', spend:'₹–', cpl:'₹11,000', name:'Marina Bay Image — Sea View Banner'},
+];
+
+const TYPE_COLORS = {
+  'Campaign':'var(--blue)', 'Ad':'var(--purple)', 'Keyword':'var(--green)',
+  'Ad Set':'var(--accent)', 'Ad Group':'#10d98a'
+};
+const PLAT_COLORS = { Google:'#4285F4', Meta:'#1877F2' };
+
+let searchActiveIdx = -1;
+
+function globalSearch(query){
+  const q = query.trim().toLowerCase();
+  const clearBtn = document.getElementById('search-clear');
+  const dropdown = document.getElementById('search-dropdown');
+  const results  = document.getElementById('search-results');
+  const hint     = document.getElementById('search-hint');
+
+  clearBtn.style.display = q ? 'block' : 'none';
+  dropdown.style.display = 'block';
+  searchActiveIdx = -1;
+
+  if(!q){ hint.style.display='block'; results.innerHTML=''; return; }
+  hint.style.display = 'none';
+
+  const fields = ['id','name','campName','campId','adGroupId','adGroupName','adSetId','adSetName','adName','project','region','campType','matchType','audience','placement','objective','status','platform','type'];
+  const matched = SEARCH_INDEX.filter(r =>
+    fields.some(f => r[f] && r[f].toLowerCase().includes(q))
+  );
+
+  if(!matched.length){
+    results.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">
+      No results found for "<strong style="color:var(--text)">${query}</strong>"</div>`;
+    return;
+  }
+
+  // Group by type
+  const groups = {};
+  matched.forEach(r=>{ if(!groups[r.type]) groups[r.type]=[]; groups[r.type].push(r); });
+
+  let html = '';
+  let globalIdx = 0;
+  Object.entries(groups).forEach(([type, items])=>{
+    html += `<div style="padding:6px 14px 4px;font-size:9px;color:var(--muted);
+      letter-spacing:2px;text-transform:uppercase;background:var(--card2);
+      border-bottom:1px solid var(--border);">${type}s (${items.length})</div>`;
+    items.forEach(item=>{
+      const platColor = PLAT_COLORS[item.platform] || 'var(--muted)';
+      const typeColor = TYPE_COLORS[item.type]     || 'var(--muted)';
+      const idKey     = item.adSetId || item.adGroupId || '';
+      const idLabel   = item.adSetId ? 'Ad Set ID' : item.adGroupId ? 'Ad Group ID' : '';
+      const statusColor = item.status==='On Track'?'var(--green)':item.status==='Need Attention'?'var(--red)':item.status==='Scale'?'var(--green)':'var(--accent)';
+      const highlight = (txt, q) => {
+        const escaped = q.replace(/[-.*+?^${}()|[\]\\]/g, '\\$&');
+        const re = new RegExp('(' + escaped + ')', 'gi');
+        return String(txt).replace(re, '<mark style="background:rgba(245,166,35,.3);color:var(--accent);border-radius:2px;">$1</mark>');
+      };
+      // Build breadcrumb hierarchy
+      const crumb = [];
+      if(item.campName  && item.type!=='Campaign') crumb.push({label:'Camp', val:item.campName});
+      if(item.adGroupName && item.type!=='Ad Group') crumb.push({label:'AdGrp', val:item.adGroupName});
+      if(item.adSetName  && item.type!=='Ad Set')   crumb.push({label:'AdSet', val:item.adSetName});
+      if(item.adName     && item.type!=='Ad')        crumb.push({label:'Ad',   val:item.adName});
+      const breadcrumb = crumb.map(c=>`<span style="color:var(--muted)">${c.label}:</span> <span style="color:var(--text)">${highlight(c.val,q)}</span>`).join(' <span style="color:var(--muted2)">›</span> ');
+
+      // Extra meta fields (audience, placement, matchType, objective)
+      const metaFields = [];
+      if(item.adGroupName && item.type==='Ad Group') metaFields.push({k:'Ad Group', v:item.adGroupName});
+      if(item.adSetName   && item.type==='Ad Set')   metaFields.push({k:'Ad Set',   v:item.adSetName});
+      if(item.campName    && item.type==='Campaign') metaFields.push({k:'Campaign', v:item.campName});
+      if(item.adName      && item.type==='Ad')       metaFields.push({k:'Ad Name',  v:item.adName});
+      if(item.campId)      metaFields.push({k:'Camp ID',   v:item.campId});
+      if(item.adGroupId && item.type!=='Ad Group') metaFields.push({k:'AdGrp ID',  v:item.adGroupId});
+      if(item.adSetId   && item.type!=='Ad Set')   metaFields.push({k:'AdSet ID',  v:item.adSetId});
+      if(item.matchType)   metaFields.push({k:'Match',     v:item.matchType});
+      if(item.audience)    metaFields.push({k:'Audience',  v:item.audience});
+      if(item.placement)   metaFields.push({k:'Placement', v:item.placement});
+      if(item.objective)   metaFields.push({k:'Objective', v:item.objective});
+      const metaRow = metaFields.map(f=>`<span>&#9642; ${f.k}: <span style="color:var(--text);font-family:'IBM Plex Mono';">${highlight(f.v,q)}</span></span>`).join('');
+
+      html += `<div class="search-result-item" data-idx="${globalIdx}" data-tab="${item.tab}"
+        onclick="goToResult('${item.tab}','${item.id}')"
+        style="padding:10px 14px;border-bottom:1px solid var(--muted2);cursor:pointer;
+          display:flex;flex-direction:column;gap:5px;transition:background .15s;"
+        onmouseover="highlightResult(${globalIdx})" onmouseout="">
+        <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+          <span style="font-size:10px;background:${typeColor}22;color:${typeColor};
+            padding:2px 7px;border-radius:4px;font-weight:700;letter-spacing:.5px;flex-shrink:0;">${item.type}</span>
+          <span style="font-size:10px;background:${platColor}22;color:${platColor};
+            padding:2px 7px;border-radius:4px;font-weight:700;flex-shrink:0;">${item.platform}</span>
+          <span style="font-size:11px;font-weight:600;flex:1;">${highlight(item.name, q)}</span>
+          <span style="font-size:10px;color:${statusColor};font-weight:700;flex-shrink:0;">${item.status}</span>
+        </div>
+        ${breadcrumb?`<div style="font-size:10px;color:var(--muted);padding-left:2px;line-height:1.5;">${breadcrumb}</div>`:''}
+        <div style="display:flex;gap:10px;font-size:10px;color:var(--muted);padding-left:2px;flex-wrap:wrap;">
+          <span>&#128313; ID: <span style="color:var(--text);font-family:'IBM Plex Mono';">${highlight(item.id, q)}</span></span>
+          <span>&#128313; Project: <span style="color:var(--text);">${highlight(item.project, q)}</span></span>
+          <span>&#128313; Region: <span style="color:var(--text);">${highlight(item.region, q)}</span></span>
+          ${item.campType?`<span>&#128313; Type: <span style="color:var(--text);">${highlight(item.campType, q)}</span></span>`:''}
+          ${item.cpl&&item.cpl!=='₹–'?`<span>&#128313; CPA: <span style="color:var(--text);">${item.cpl}</span></span>`:''}
+        </div>
+        ${metaRow?`<div style="display:flex;gap:10px;font-size:10px;color:var(--muted);padding-left:2px;flex-wrap:wrap;">${metaRow}</div>`:''}
+      </div>`;
+      globalIdx++;
+    });
+  });
+
+  html += `<div style="padding:8px 14px;text-align:center;font-size:10px;color:var(--muted);
+    border-top:1px solid var(--border);">${matched.length} result${matched.length>1?'s':''} found</div>`;
+  results.innerHTML = html;
+}
+
+function highlightResult(idx){
+  document.querySelectorAll('.search-result-item').forEach((el,i)=>{
+    el.style.background = i===idx ? 'rgba(245,166,35,.07)' : '';
+  });
+  searchActiveIdx = idx;
+}
+
+function navigateResults(e){
+  const items = document.querySelectorAll('.search-result-item');
+  if(!items.length) return;
+  if(e.key==='ArrowDown'){ e.preventDefault(); searchActiveIdx=Math.min(searchActiveIdx+1,items.length-1); highlightResult(searchActiveIdx); items[searchActiveIdx]?.scrollIntoView({block:'nearest'}); }
+  if(e.key==='ArrowUp')  { e.preventDefault(); searchActiveIdx=Math.max(searchActiveIdx-1,0); highlightResult(searchActiveIdx); items[searchActiveIdx]?.scrollIntoView({block:'nearest'}); }
+  if(e.key==='Enter'     && searchActiveIdx>=0){ items[searchActiveIdx]?.click(); }
+  if(e.key==='Escape')   { closeSearchDropdown(); }
+}
+
+function goToResult(tabId, itemId){
+  // Switch to the right tab
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById(tabId)?.classList.add('active');
+  const tabIdx = {'tab-overview':0,'tab-google':1,'tab-meta':2,'tab-keywords':3,'tab-adsreport':4,'tab-funnel':5,'tab-target':6};
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active', i===tabIdx[tabId]));
+  setTimeout(buildCharts,50);
+  closeSearchDropdown();
+  // Highlight matching rows in tables
+  setTimeout(()=>highlightTableRow(itemId), 100);
+}
+
+function highlightTableRow(itemId){
+  document.querySelectorAll('tbody tr').forEach(row=>{
+    row.style.background='';
+    row.style.outline='';
+  });
+  document.querySelectorAll('tbody tr').forEach(row=>{
+    if(row.innerText.toLowerCase().includes(itemId.toLowerCase())){
+      row.style.background='rgba(245,166,35,.12)';
+      row.style.outline='1px solid rgba(245,166,35,.4)';
+      row.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  });
+}
+
+function showSearchDropdown(){
+  const q = document.getElementById('global-search').value.trim();
+  document.getElementById('search-dropdown').style.display = 'block';
+  document.getElementById('search-hint').style.display = q ? 'none' : 'block';
+}
+
+function closeSearchDropdown(){
+  document.getElementById('search-dropdown').style.display = 'none';
+}
+
+function clearGlobalSearch(){
+  document.getElementById('global-search').value = '';
+  document.getElementById('search-clear').style.display = 'none';
+  document.getElementById('search-results').innerHTML = '';
+  document.getElementById('search-hint').style.display = 'block';
+  document.getElementById('search-dropdown').style.display = 'none';
+  document.querySelectorAll('tbody tr').forEach(r=>{ r.style.background=''; r.style.outline=''; });
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', e=>{
+  const wrap = document.getElementById('global-search-wrap');
+  if(wrap && !wrap.contains(e.target)) closeSearchDropdown();
+});
+
+// ============================================================
+// PLATFORM & CAMPAIGN TYPE FILTERS
+// ============================================================
+
+// Map each table row to platform and campaign type for filtering
+const ROW_META = {
+  // Google campaign table (id: google-camp-table)
+  // Meta campaign table  (id: meta-camp-table)
+  // Ads report table     (id: ads-table)
+};
+
+function applyFilters(){
+  const platform  = document.getElementById('platform-filter')?.value || 'all';
+  const campType  = document.getElementById('camptype-filter')?.value || 'all';
+
+  // Filter Google campaign table
+  filterTableByMeta('google-camp-table', platform, campType, 'google');
+  // Filter Meta campaign table
+  filterTableByMeta('meta-camp-table', platform, campType, 'meta');
+  // Filter Ads report table
+  filterAdsTable(platform, campType);
+
+  updateFilterChips(platform, campType);
+  updateDashboard();
+}
+
+function filterTableByMeta(tableId, platform, campType, tablePlatform){
+  const table = document.getElementById(tableId);
+  if(!table) return;
+  const rows = table.querySelectorAll('tbody tr');
+  rows.forEach(row => {
+    const typeCell = row.cells[1]?.innerText?.trim().toLowerCase() || '';
+    const platformMatch = platform === 'all' || platform === tablePlatform;
+    const typeMatch = campType === 'all' || typeCell.includes(campType.toLowerCase())
+      || (campType === 'leadgen' && (typeCell.includes('lead gen') || typeCell.includes('lead form')))
+      || (campType === 'retarget' && typeCell.includes('retarget'))
+      || (campType === 'pmax' && typeCell.includes('pmax'))
+      || (campType === 'awareness' && typeCell.includes('awareness'))
+      || (campType === 'traffic' && typeCell.includes('traffic'));
+    row.style.display = (platformMatch && typeMatch) ? '' : 'none';
+  });
+}
+
+function filterAdsTable(platform, campType){
+  const table = document.getElementById('ads-table');
+  if(!table) return;
+  table.querySelectorAll('tbody tr').forEach(row => {
+    const platCell  = row.cells[1]?.innerText?.toLowerCase() || '';
+    const typeCell  = row.cells[2]?.innerText?.toLowerCase() || '';
+    const platMatch = platform === 'all'
+      || (platform === 'google' && platCell.includes('google'))
+      || (platform === 'meta'   && platCell.includes('meta'));
+    const typeMap = {
+      video:'video', rsa:'rsa', display:'display', carousel:'carousel',
+      leadgen:'lead', stories:'stories', awareness:'awareness', traffic:'traffic',
+      pmax:'pmax', search:'rsa'
+    };
+    const typeMatch = campType === 'all' || typeCell.includes(campType.toLowerCase())
+      || (campType === 'leadgen' && (typeCell.includes('lead')))
+      || (campType === 'video'   && typeCell.includes('video'))
+      || (campType === 'carousel' && typeCell.includes('carousel'));
+    row.style.display = (platMatch && typeMatch) ? '' : 'none';
+  });
+}
+
+const PLATFORM_LABELS = {all:'All Platforms', google:'Google Ads', meta:'Meta Ads'};
+const CAMPTYPE_LABELS = {
+  all:'All Types', search:'Search', pmax:'PMax', display:'Display',
+  video:'Video', leadgen:'Lead Gen', carousel:'Carousel',
+  retarget:'Retargeting', awareness:'Awareness', traffic:'Traffic'
+};
+
+function updateFilterChips(platform, campType){
+  const bar   = document.getElementById('active-filters-bar');
+  const chips = document.getElementById('filter-chips');
+  if(!bar || !chips) return;
+
+  chips.innerHTML = '';
+  const active = [];
+
+  if(platform !== 'all'){
+    const color = platform === 'google' ? '#4285F4' : '#1877F2';
+    active.push(`<span style="background:${color}22;color:${color};border:1px solid ${color}44;
+      padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px;
+      display:inline-flex;align-items:center;gap:5px;">
+      ${PLATFORM_LABELS[platform]}
+      <span onclick="resetFilter('platform')" style="cursor:pointer;opacity:.7;">✕</span>
+    </span>`);
+  }
+  if(campType !== 'all'){
+    active.push(`<span style="background:rgba(245,166,35,.15);color:var(--accent);border:1px solid rgba(245,166,35,.3);
+      padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px;
+      display:inline-flex;align-items:center;gap:5px;">
+      ${CAMPTYPE_LABELS[campType]}
+      <span onclick="resetFilter('camptype')" style="cursor:pointer;opacity:.7;">✕</span>
+    </span>`);
+  }
+
+  chips.innerHTML = active.join('');
+  bar.style.display = active.length > 0 ? 'flex' : 'none';
+}
+
+function resetFilter(type){
+  if(type === 'platform'){
+    document.getElementById('platform-filter').value = 'all';
+  } else {
+    document.getElementById('camptype-filter').value = 'all';
+  }
+  applyFilters();
+}
+
+function clearAllFilters(){
+  document.getElementById('platform-filter').value  = 'all';
+  document.getElementById('camptype-filter').value  = 'all';
+  document.getElementById('proj-filter').value      = 'All Projects';
+  document.getElementById('region-filter').value    = 'All Regions';
+  applyFilters();
+  // show all rows
+  document.querySelectorAll('tbody tr').forEach(r => r.style.display = '');
+  document.getElementById('active-filters-bar').style.display = 'none';
+}
+
+// ============================================================
+// TARGET VS ACHIEVED CHARTS
+// ============================================================
+function buildTargetCharts(){
+  const months = ['Nov','Dec','Jan','Feb','Mar','Apr'];
+
+  // Leads & QL T vs A (grouped)
+  C('tvLeads',{type:'bar',data:{
+    labels: months,
+    datasets:[
+      {label:'Lead Target',   data:[3200,3200,3400,3400,3500,3500], backgroundColor:'rgba(74,90,114,.4)',   borderRadius:4},
+      {label:'Leads Achieved',data:[2980,3120,3050,3280,3620,3847], backgroundColor:'rgba(16,217,138,.65)', borderRadius:4},
+      {label:'QL Target',     data:[2240,2240,2380,2380,2450,2450], backgroundColor:'rgba(74,90,114,.25)',  borderRadius:4},
+      {label:'QL Achieved',   data:[2086,2184,2135,2296,2534,2698], backgroundColor:'rgba(78,159,255,.6)',  borderRadius:4},
+    ]
+  },options:{plugins:{legend:{position:'top',labels:{boxWidth:10,padding:8}}},scales:{y:{beginAtZero:false,min:1800}}}});
+
+  // Bookings T vs A
+  C('tvBookings',{type:'bar',data:{
+    labels: months,
+    datasets:[
+      {label:'Target',  data:[200,210,210,220,230,240], backgroundColor:'rgba(74,90,114,.4)',   borderRadius:4},
+      {label:'Achieved',data:[186,198,192,204,218,214], backgroundColor:'rgba(245,166,35,.65)', borderRadius:4}
+    ]
+  },options:{plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:false,min:150}}}});
+
+  // Spend Budget vs Actual
+  C('tvSpend',{type:'bar',data:{
+    labels: months,
+    datasets:[
+      {label:'Budget (L)',      data:[45,45,48,48,50,50],             backgroundColor:'rgba(74,90,114,.4)',   borderRadius:4},
+      {label:'Actual Spend (L)',data:[42.1,44.8,45.2,47.0,49.4,48.6],backgroundColor:'rgba(78,159,255,.65)', borderRadius:4}
+    ]
+  },options:{plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:false,min:35}}}});
+
+  // CPQL Target vs Actual per Project
+  const cpqlActuals = [1820,1458,2276,1628];
+  C('tvCPQL',{type:'bar',data:{
+    labels:['Skyline Hts','Marina Bay','Green Mdws','Central Pk'],
+    datasets:[
+      {label:'Target CPQL (₹)',data:[1500,1500,1500,1500], backgroundColor:'rgba(74,90,114,.5)', borderRadius:4},
+      {label:'Actual CPQL (₹)',data:cpqlActuals,
+        backgroundColor:cpqlActuals.map(v=>v<=1500?'rgba(16,217,138,.7)':v<=1800?'rgba(245,166,35,.7)':'rgba(255,69,96,.7)'),
+        borderRadius:4}
+    ]
+  },options:{plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:false,min:1000}}}});
+
+  // CPL Target vs Actual per Project
+  const cplActuals = [1274,1265,1366,1140];
+  C('tvCPL',{type:'bar',data:{
+    labels:['Skyline Hts','Marina Bay','Green Mdws','Central Pk'],
+    datasets:[
+      {label:'Target CPL (₹)',data:[1000,1000,1000,1000], backgroundColor:'rgba(74,90,114,.5)', borderRadius:4},
+      {label:'Actual CPL (₹)',data:cplActuals,
+        backgroundColor:cplActuals.map(v=>v<=1000?'rgba(16,217,138,.7)':v<=1200?'rgba(245,166,35,.7)':'rgba(255,69,96,.7)'),
+        borderRadius:4}
+    ]
+  },options:{plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:false,min:800}}}});
+
+  // Progress bars
+  buildProgressBars();
+}
+
+function buildProgressBars(){
+  const bars = [
+    {label:'Total Leads',         achieved:3847,  target:3500,  unit:'',  color:'var(--green)'},
+    {label:'Qualified Leads (QL)',achieved:2698,  target:2600,  unit:'',  color:'var(--blue)'},
+    {label:'Bookings',            achieved:214,   target:240,   unit:'',  color:'var(--accent)'},
+    {label:'Budget Utilized',     achieved:48.6,  target:50,    unit:'L', color:'var(--blue)'},
+    {label:'Site Visits',         achieved:892,   target:800,   unit:'',  color:'var(--purple)'},
+    {label:'CPL vs Target',       achieved:1000,  target:1263,  unit:'₹', color:'var(--red)',   inverse:true},
+    {label:'CPQL vs Target',      achieved:1500,  target:1802,  unit:'₹', color:'var(--red)',   inverse:true},
+    {label:'Booking Conv Rate',   achieved:5.6,   target:6.0,   unit:'%', color:'var(--accent)'},
+    {label:'QL → Booking Conv',   achieved:7.9,   target:9.2,   unit:'%', color:'var(--purple)'},
+  ];
+  const wrap = document.getElementById('kpi-progress-bars');
+  if(!wrap) return;
+  wrap.innerHTML = bars.map(b=>{
+    const pct = b.inverse ? Math.min(100,Math.round(b.achieved/b.target*100)) : Math.min(120,Math.round(b.achieved/b.target*100));
+    const displayPct = b.inverse ? Math.round((1-(b.target-b.achieved)/b.target)*100) : pct;
+    const barPct = Math.min(100, pct);
+    const color = b.inverse ? (pct<100?'var(--red)':'var(--green)') : (pct>=100?'var(--green)':pct>=85?'var(--accent)':'var(--red)');
+    const achLabel = b.unit==='₹' ? b.unit+b.achieved.toLocaleString() : b.achieved.toLocaleString()+b.unit;
+    const tgtLabel = b.unit==='₹' ? b.unit+b.target.toLocaleString() : b.target.toLocaleString()+b.unit;
+    return `<div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:12px;font-weight:600;">${b.label}</span>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:11px;color:var(--muted);">Target: <span style="color:var(--text);font-family:'IBM Plex Mono';">${tgtLabel}</span></span>
+          <span style="font-size:11px;color:var(--muted);">Achieved: <span style="color:${color};font-family:'IBM Plex Mono';font-weight:700;">${achLabel}</span></span>
+          <span style="font-size:12px;font-weight:700;color:${color};font-family:'IBM Plex Mono';min-width:42px;text-align:right;">${displayPct}%</span>
+        </div>
+      </div>
+      <div style="background:var(--muted2);border-radius:6px;height:8px;overflow:hidden;">
+        <div style="height:100%;width:${barPct}%;background:${color};border-radius:6px;transition:width .8s ease;"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// CUSTOM DATE RANGE
+// ============================================================
+function handlePeriodChange(sel){
+  const today = new Date();
+  const fmt   = d => d.toISOString().split('T')[0];
+
+  const ranges = {
+    '7d':   () => { const f=new Date(); f.setDate(today.getDate()-7);  return [fmt(f), fmt(today)]; },
+    '14d':  () => { const f=new Date(); f.setDate(today.getDate()-14); return [fmt(f), fmt(today)]; },
+    '30d':  () => { const f=new Date(); f.setDate(today.getDate()-30); return [fmt(f), fmt(today)]; },
+    'month':() => { const f=new Date(today.getFullYear(),today.getMonth(),1); return [fmt(f), fmt(today)]; },
+    'all':  () => { return ['2020-01-01', fmt(today)]; },
+  };
+
+  if(sel.value === 'custom'){
+    document.getElementById('custom-date-popup').style.display = 'block';
+    // Pre-fill with last 30 days as default
+    const [f,t] = ranges['30d']();
+    document.getElementById('date-from').value = f;
+    document.getElementById('date-to').value   = t;
+    document.getElementById('date-error').style.display = 'none';
+  } else {
+    document.getElementById('custom-date-popup').style.display = 'none';
+    // Show active range chip
+    if(ranges[sel.value]){
+      const [f,t] = ranges[sel.value]();
+      showPeriodChip(sel.options[sel.selectedIndex].text, f, t);
+    }
+    updateDashboard();
+  }
+}
+
+function showPeriodChip(label, from, to){
+  const bar   = document.getElementById('active-filters-bar');
+  const chips = document.getElementById('filter-chips');
+  if(!bar || !chips) return;
+  // Remove existing period chip
+  const existing = document.getElementById('period-chip');
+  if(existing) existing.remove();
+  if(label === 'Last 30 Days') return; // default, no chip needed
+  const chip = document.createElement('span');
+  chip.id = 'period-chip';
+  const fmtD = d => new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  chip.innerHTML = `<span style="background:rgba(167,139,250,.15);color:var(--purple);border:1px solid rgba(167,139,250,.3);
+    padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px;
+    display:inline-flex;align-items:center;gap:5px;">
+    &#128197; ${label}
+    <span onclick="resetPeriod()" style="cursor:pointer;opacity:.7;">&#10005;</span>
+  </span>`;
+  chips.appendChild(chip);
+  bar.style.display = 'flex';
+}
+
+function resetPeriod(){
+  document.getElementById('period-filter').value = '30d';
+  const chip = document.getElementById('period-chip');
+  if(chip) chip.remove();
+  updateDashboard();
+}
+
+function setQuickRange(days){
+  const today = new Date();
+  const from  = new Date(); from.setDate(today.getDate() - days);
+  document.getElementById('date-to').value   = today.toISOString().split('T')[0];
+  document.getElementById('date-from').value = from.toISOString().split('T')[0];
+  document.getElementById('date-error').style.display = 'none';
+}
+
+function setQuickRangeMonth(){
+  const today = new Date();
+  const from  = new Date(today.getFullYear(), today.getMonth(), 1);
+  document.getElementById('date-to').value   = today.toISOString().split('T')[0];
+  document.getElementById('date-from').value = from.toISOString().split('T')[0];
+  document.getElementById('date-error').style.display = 'none';
+}
+
+function setQuickRangeAll(){
+  const today = new Date();
+  document.getElementById('date-from').value = '2020-01-01';
+  document.getElementById('date-to').value   = today.toISOString().split('T')[0];
+  document.getElementById('date-error').style.display = 'none';
+}
+
+function validateDates(){
+  const from = document.getElementById('date-from').value;
+  const to   = document.getElementById('date-to').value;
+  const err  = document.getElementById('date-error');
+  if(from && to && from > to){
+    err.style.display = 'block';
+    document.querySelector('#custom-date-popup button').disabled = true;
+    document.querySelector('#custom-date-popup button').style.opacity = '.4';
+  } else {
+    err.style.display = 'none';
+    document.querySelector('#custom-date-popup button').disabled = false;
+    document.querySelector('#custom-date-popup button').style.opacity = '1';
+  }
+}
+
+function applyCustomDate(){
+  const from = document.getElementById('date-from').value;
+  const to   = document.getElementById('date-to').value;
+  if(!from || !to) return;
+  if(from > to){ validateDates(); return; }
+  const fmt = d => new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  const sel  = document.getElementById('period-filter');
+  // Update dropdown label to show selected range
+  let opt = sel.querySelector('option[value="custom"]');
+  opt.text = fmt(from) + ' – ' + fmt(to);
+  document.getElementById('custom-date-popup').style.display = 'none';
+  updateDashboard();
+}
+
+function closeCustomDate(){
+  document.getElementById('custom-date-popup').style.display = 'none';
+  // Revert to previous valid option
+  const sel = document.getElementById('period-filter');
+  sel.value = sel.options[0].value;
+}
+
+// Close popup when clicking outside
+document.addEventListener('click', function(e){
+  const popup = document.getElementById('custom-date-popup');
+  const group = popup?.closest('.filter-group');
+  if(popup && group && !group.contains(e.target)){
+    popup.style.display = 'none';
+  }
+});
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('load', ()=>{ setTimeout(buildCharts, 100); });
+
+// ══════════════════════════════════════════════════════
+// LIVE GOOGLE ADS DATA CONNECTION
+// ══════════════════════════════════════════════════════
+// ── Manual refresh via CSV ──
+function loadLiveGoogleAds() {
+  var ind = document.getElementById('live-sync-indicator');
+  if(ind){ ind.textContent='⟳ Syncing...'; ind.style.color='var(--amb)'; }
+  loadLiveGoogleAdsCSV();
+}
+
+function updateLiveKPIs(s) {
+  const fmtINR = n => n ? '₹' + Number(n).toLocaleString('en-IN', {maximumFractionDigits:0}) : '₹0';
+  const fmtNum = n => Number(n||0).toLocaleString('en-IN');
+
+  // Update the Google Ads stat strip
+  const statMap = {
+    'google-stat-spend':   fmtINR(s.totalCost),
+    'google-stat-clicks':  fmtNum(s.totalClicks),
+    'google-stat-impr':    fmtNum(s.totalImpressions),
+    'google-stat-ctr':     s.avgCtr || '--',
+    'google-stat-cpc':     fmtINR(s.avgCpc),
+    'google-stat-conv':    fmtNum(s.totalConversions),
+    'google-stat-cpl':     fmtINR(s.blendedCpl)
+  };
+  Object.entries(statMap).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if(el) { el.textContent = val; el.style.animation = 'kpiUpdate 0.5s ease'; }
+  });
+
+  // Update KPI cards if visible
+  const kpiSpend = document.getElementById('kpi-spend');
+  if(kpiSpend) kpiSpend.textContent = fmtINR(s.totalCost);
+}
+
+function mapStatus(s) {
+  if(!s) return 'review';
+  s = s.toLowerCase();
+  if(s === 'enabled') return 'active';
+  if(s === 'removed') return 'loss';
+  return 'review';
+}
+
+function mapCampType(t) {
+  if(!t) return 'search';
+  t = t.toLowerCase();
+  if(t.includes('demand')) return 'demandgen';
+  if(t.includes('search')) return 'search';
+  if(t.includes('pmax') || t.includes('performance max')) return 'pmax';
+  if(t.includes('display')) return 'display';
+  if(t.includes('video')) return 'video';
+  if(t.includes('shopping')) return 'shopping';
+  return 'search';
+}
+
+function statusBadge(s) {
+  if(!s) return '<span class="badge badge-yellow">Unknown</span>';
+  if(s.toLowerCase() === 'enabled') return '<span class="badge badge-green">On Track</span>';
+  if(s.toLowerCase() === 'removed') return '<span class="badge badge-red">Removed</span>';
+  return '<span class="badge badge-yellow">Paused</span>';
+}
+
+function typeBadge(t) {
+  if(!t) return '<span class="b bb">Search</span>';
+  t = t.trim();
+  if(t.toLowerCase().includes('demand')) return '<span class="b bc">Demand Gen</span>';
+  if(t.toLowerCase().includes('pmax')) return '<span class="b bp">PMax</span>';
+  if(t.toLowerCase().includes('display')) return '<span class="b bn">Display</span>';
+  if(t.toLowerCase().includes('video')) return '<span class="b bn">Video</span>';
+  return '<span class="b bb">Search</span>';
+}
+
+function renderLiveGoogleTable(campaigns) {
+  const tbl = document.getElementById('google-camp-table') || document.getElementById('gTable');
+  if(!tbl) return;
+  const tbody = tbl.querySelector('tbody');
+  if(!tbody) return;
+
+  if(!campaigns || campaigns.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="12" style="padding:28px;text-align:center;color:var(--muted);font-size:12px;">No campaign data received</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = campaigns.map((c, i) => {
+    const spend = c.cost ? '₹' + Number(c.cost).toLocaleString('en-IN', {maximumFractionDigits:0}) : '₹0';
+    const cpl   = c.cpl  ? '₹' + Number(c.cpl).toLocaleString('en-IN', {maximumFractionDigits:0}) : '—';
+    const cplColor = !c.cpl ? 'var(--muted)' : Number(c.cpl) <= 6000 ? 'var(--green)' : Number(c.cpl) <= 12000 ? 'var(--accent)' : 'var(--red)';
+    const isActive = c.status && c.status.toLowerCase() === 'enabled';
+    const rowStyle = isActive ? 'background:rgba(16,217,138,.03)' : '';
+
+    return `<tr data-platform="google"
+      data-ctype="${mapCampType(c.campType)}"
+      data-status="${mapStatus(c.status)}"
+      data-region="all"
+      data-search="${(c.name||'').toLowerCase()} google ${(c.campType||'').toLowerCase()} ${(c.status||'').toLowerCase()}"
+      style="${rowStyle}">
+      <td class="tn">${c.name || '—'}${isActive ? ' ⭐' : ''}</td>
+      <td>${typeBadge(c.campType)}</td>
+      <td class="tm">—</td>
+      <td class="mono">${spend}</td>
+      <td class="mono">${Number(c.clicks||0).toLocaleString('en-IN')}</td>
+      <td>
+        <div class="tva-cell">
+          <div class="tvc-row">
+            <span class="tvc-val" style="color:${cplColor}">${cpl}</span>
+            <span class="tvc-tgt">/ ₹6K target</span>
+          </div>
+        </div>
+      </td>
+      <td class="mono" style="color:var(--muted)">—</td>
+      <td class="mono" style="color:var(--muted)">—</td>
+      <td class="mono">${Number(c.conversions||0).toLocaleString('en-IN')}</td>
+      <td class="mono" style="color:var(--muted)">—</td>
+      <td class="mono" style="color:var(--muted)">—</td>
+      <td>${statusBadge(c.status)}</td>
+    </tr>`;
+  }).join('');
+
+  // Update count badge
+  const countEl = document.getElementById('gCampCount');
+  if(countEl) countEl.textContent = campaigns.length + ' campaigns (live)';
+}
+
+// ── Style pulse animation for KPI updates ──
+const kpiStyle = document.createElement('style');
+kpiStyle.textContent = `
+  @keyframes kpiUpdate {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.04); color: var(--accent); }
+    100% { transform: scale(1); }
+  }
+`;
+document.head.appendChild(kpiStyle);
+
+// ── Test connection function ──
+function testLiveConnection() {
+  const statusEl = document.getElementById('live-connection-status');
+  const panel    = document.getElementById('live-test-panel');
+  if(statusEl) statusEl.textContent = '⟳ Testing connection...';
+
+  const cbName = 'vTestCallback_' + Date.now();
+  const old    = document.getElementById('ga-test-script');
+  if(old) old.remove();
+
+  window[cbName] = function(data) {
+    delete window[cbName];
+    document.getElementById('ga-test-script')?.remove();
+
+    const campCount = data.campaigns ? data.campaigns.length : 0;
+    const totalCost = data.summary   ? '₹' + Number(data.summary.totalCost).toLocaleString('en-IN',{maximumFractionDigits:0}) : '—';
+    const totalConv = data.summary   ? Number(data.summary.totalConversions).toLocaleString('en-IN') : '—';
+
+    if(statusEl) statusEl.innerHTML =
+      '<span style="color:var(--green);font-weight:700;">✅ Connected!</span> &nbsp;|&nbsp; ' +
+      campCount + ' campaigns &nbsp;|&nbsp; Total spend: ' + totalCost +
+      ' &nbsp;|&nbsp; Conversions: ' + totalConv +
+      ' &nbsp;|&nbsp; Last sync: ' + new Date(data.lastSync).toLocaleTimeString('en-IN');
+
+    if(panel) panel.style.background = 'rgba(16,217,138,0.06)';
+    if(panel) panel.style.borderColor = 'rgba(16,217,138,0.25)';
+
+    // Now load the full data
+    liveGoogleData = data;
+    renderLiveGoogleTable(data.campaigns);
+    if(data.summary) updateLiveKPIs(data.summary);
+  };
+
+  const script  = document.createElement('script');
+  script.id     = 'ga-test-script';
+  script.src    = GOOGLE_ADS_LIVE_URL + '?callback=' + cbName + '&t=' + Date.now();
+  script.onerror = function() {
+    delete window[cbName];
+    if(statusEl) statusEl.innerHTML =
+      '<span style="color:var(--red);font-weight:700;">❌ Connection failed</span> — ' +
+      '<a href="' + GOOGLE_ADS_LIVE_URL + '?callback=test" target="_blank" ' +
+      'style="color:var(--acc);text-decoration:underline;margin-left:6px;">Open URL in new tab →</a>';
+    if(panel) panel.style.borderColor = 'rgba(255,69,96,0.3)';
+    const old = document.getElementById('ga-test-script'); if(old) old.remove();
+  };
+  document.head.appendChild(script);
+}
+
+// Auto-refresh handled in DOMContentLoaded above
+
+// ── Save CSV URL and connect ──
+function saveCSVUrl() {
+  var url = document.getElementById('csv-url-input').value.trim();
+  if(!url || !url.includes('docs.google.com')) {
+    document.getElementById('csv-url-hint').innerHTML =
+      '<span style="color:#C8243A">⚠ Please paste a valid Google Sheets URL</span>';
+    return;
+  }
+  GOOGLE_SHEET_CSV_URL = url;
+  // Save to localStorage so it persists
+  try { localStorage.setItem('virendra_csv_url', url); } catch(e){}
+  document.getElementById('csv-setup-box').style.display = 'none';
+  document.getElementById('live-connection-status').textContent = '⟳ Connecting...';
+  loadLiveGoogleAdsCSV();
+}
+
+// ── Restore saved URL on load ──
+window.addEventListener('DOMContentLoaded', function(){
+  try {
+    var saved = localStorage.getItem('virendra_csv_url');
+    if(saved) {
+      GOOGLE_SHEET_CSV_URL = saved;
+      document.getElementById('csv-setup-box').style.display = 'none';
+      document.getElementById('csv-url-input').value = saved;
+    }
+  } catch(e){}
+});
+
+</script>
+</body>
+</html>
